@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+Publish/
+Logs/
+config.json
+*.DotSettings.user

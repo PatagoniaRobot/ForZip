@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+             x:Class="ForZip.GUI.Views.UnzipView"
+             x:DataType="vm:UnzipViewModel"
+             DragDrop.AllowDrop="True">
+
+  <ScrollViewer>
+    <StackPanel Spacing="12" Margin="4">
+
+      <TextBlock Text="{Binding Title}"
+                 FontSize="16" FontWeight="SemiBold"
+                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+      <Border BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="24"
+              MinHeight="100">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+          <TextBlock Text="{Binding LabelDropZone}"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     HorizontalAlignment="Center"/>
+          <TextBlock Text="o hacé clic para buscar"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     HorizontalAlignment="Center"/>
+          <Button Content="Seleccionar ZIP..."
+                  Click="OnBrowseZipClick"
+                  HorizontalAlignment="Center"
+                  Margin="0,8,0,0"/>
+        </StackPanel>
+      </Border>
+
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding LabelZipPath}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Grid.Column="0" 
+                   Text="{Binding ZipFilePath}" 
+                   Height="32"
+                   VerticalContentAlignment="Center"/>
+          <Button Grid.Column="1"
+                  Content="..."
+                  Click="OnBrowseZipClick"
+                  Width="40" Height="32"
+                  Padding="0"
+                  HorizontalContentAlignment="Center"
+                  VerticalContentAlignment="Center"
+                  Margin="6,0,0,0"/>
+        </Grid>
+      </StackPanel>
+
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding LabelOutputDir}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Grid.Column="0" 
+                   Text="{Binding OutputDirectory}" 
+                   Height="32"
+                   VerticalContentAlignment="Center"/>
+          <Button Grid.Column="1"
+                  Content="..."
+                  Click="OnBrowseOutputClick"
+                  Width="40" Height="32"
+                  Padding="0"
+                  HorizontalContentAlignment="Center"
+                  VerticalContentAlignment="Center"
+                  Margin="6,0,0,0"/>
+        </Grid>
+      </StackPanel>
+
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="0,0,0,4">
+          <TextBlock Text="{Binding LabelPassword}"
+                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+          <TextBlock Text="(AES-256)"
+                     Foreground="{DynamicResource AccentBrush}"
+                     FontSize="10"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+        <TextBox Text="{Binding Password}"
+                 PasswordChar="•"
+                 Width="280"
+                 HorizontalAlignment="Left"/>
+      </DockPanel>
+
+      <ProgressBar Minimum="0" Maximum="100"
+                   Value="{Binding ProgressPercent}"
+                   Height="8"
+                   IsVisible="{Binding IsProcessing}"
+                   Foreground="{DynamicResource ProgressFillBrush}"
+                   Background="{DynamicResource ProgressBgBrush}"/>
+
+      <TextBlock Text="{Binding ProgressDetail}"
+                 Foreground="{DynamicResource TextSecondaryBrush}"
+                 FontSize="11"
+                 IsVisible="{Binding IsProcessing}"/>
+
+      <TextBlock Text="{Binding StatusMessage}"
+                 Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+      <StackPanel Orientation="Horizontal"
+                  Spacing="8"
+                  HorizontalAlignment="Center">
+        <Button Content="{Binding ButtonExtract}"
+                Command="{Binding DecompressCommand}"
+                Background="{DynamicResource AccentBrush}"
+                Foreground="White"
+                Padding="20,8"
+                IsEnabled="{Binding !IsProcessing}"/>
+        <Button Content="{Binding ButtonCancel}"
+                Command="{Binding DecompressCancelCommand}"
+                IsVisible="{Binding IsProcessing}"
+                Padding="20,8"/>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

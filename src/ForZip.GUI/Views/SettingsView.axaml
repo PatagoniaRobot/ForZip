@@ -1,0 +1,153 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+             x:Class="ForZip.GUI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <ScrollViewer>
+    <StackPanel Spacing="12" Margin="4">
+
+      <TextBlock Text="{Binding Title}"
+                 FontSize="16" FontWeight="SemiBold"
+                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+      <TabControl>
+        <TabItem Header="{Binding TabGeneral}">
+          <StackPanel Spacing="12" Margin="8">
+            <DockPanel>
+              <TextBlock Text="{Binding LabelLanguage}"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"
+                         Width="180"/>
+              <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                        SelectedItem="{Binding Language}"
+                        Width="200"
+                        HorizontalAlignment="Left"/>
+            </DockPanel>
+
+            <DockPanel>
+              <TextBlock Text="{Binding LabelTheme}"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"
+                         Width="180"/>
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <RadioButton Content="{Binding LabelThemeDark}"
+                             GroupName="ThemeGroup"
+                             IsChecked="{Binding Theme, ConverterParameter=dark, Converter={x:Static vm:ThemeRadioConverter.Instance}}"/>
+                <RadioButton Content="{Binding LabelThemeLight}"
+                             GroupName="ThemeGroup"
+                             IsChecked="{Binding Theme, ConverterParameter=light, Converter={x:Static vm:ThemeRadioConverter.Instance}}"/>
+              </StackPanel>
+            </DockPanel>
+
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top"
+                         Text="{Binding LabelOutputDir}"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         Margin="0,0,0,4"/>
+              <Button DockPanel.Dock="Right"
+                      Content="..."
+                      Click="OnBrowseOutputClick"
+                      Width="40"
+                      Margin="6,0,0,0"/>
+              <TextBox Text="{Binding OutputDirectory}"/>
+            </DockPanel>
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="{Binding TabOperator}">
+          <StackPanel Spacing="10" Margin="8">
+            <TextBlock Text="Estos datos se incluyen en los informes forenses."
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="12"/>
+            <TextBlock Text="Todos los campos son opcionales."
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="12"
+                       Margin="0,0,0,8"/>
+
+            <DockPanel>
+              <TextBlock Text="Nombre:" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding OperatorName}"/>
+            </DockPanel>
+            <DockPanel>
+              <TextBlock Text="Cargo:" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding OperatorTitle}"/>
+            </DockPanel>
+            <DockPanel>
+              <TextBlock Text="Organismo:" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding OperatorOrganization}"/>
+            </DockPanel>
+            <DockPanel>
+              <TextBlock Text="Email:" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding OperatorEmail}"/>
+            </DockPanel>
+            <DockPanel>
+              <TextBlock Text="Teléfono:" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding OperatorPhone}"/>
+            </DockPanel>
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="{Binding TabDefaults}">
+          <StackPanel Spacing="12" Margin="8">
+            <TextBlock Text="Estos valores se pre-cargan en cada operación."
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="12"/>
+
+            <DockPanel>
+              <TextBlock Text="Nivel de compresión:"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"
+                         Width="220"/>
+              <ComboBox ItemsSource="{Binding AvailableLevels}"
+                        SelectedItem="{Binding DefaultCompressionLevel}"
+                        Width="120"
+                        HorizontalAlignment="Left"/>
+            </DockPanel>
+
+            <DockPanel>
+              <TextBlock Text="Algoritmos de hash por defecto:"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"
+                         Width="220"/>
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <CheckBox Content="MD5" IsChecked="{Binding DefaultUseMd5}"/>
+                <CheckBox Content="SHA-1" IsChecked="{Binding DefaultUseSha1}"/>
+                <CheckBox Content="SHA-256" IsChecked="{Binding DefaultUseSha256}"/>
+                <CheckBox Content="SHA-512" IsChecked="{Binding DefaultUseSha512}"/>
+              </StackPanel>
+            </DockPanel>
+          </StackPanel>
+        </TabItem>
+      </TabControl>
+
+      <TextBlock Text="{Binding StatusMessage}"
+                 Foreground="{DynamicResource AccentBrush}"
+                 HorizontalAlignment="Center"/>
+
+      <StackPanel Orientation="Horizontal"
+                  Spacing="8"
+                  HorizontalAlignment="Center">
+        <Button Content="{Binding ButtonSave}"
+                Command="{Binding SaveCommand}"
+                Background="{DynamicResource AccentBrush}"
+                Foreground="White"
+                Padding="20,8"/>
+        <Button Content="{Binding ButtonReset}"
+                Command="{Binding ResetDefaultsCommand}"
+                Padding="20,8"/>
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

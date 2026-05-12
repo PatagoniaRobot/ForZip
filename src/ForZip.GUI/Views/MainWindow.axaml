@@ -1,0 +1,141 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+        xmlns:views="clr-namespace:ForZip.GUI.Views"
+        x:Class="ForZip.GUI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding AppTitle}"
+        Icon="avares://ForZip.GUI/Assets/ForZip.ico"
+        Width="1100" Height="700"
+        MinWidth="900" MinHeight="600"
+        Background="{DynamicResource BgPrimaryBrush}">
+
+  <Grid ColumnDefinitions="220,*" RowDefinitions="*,Auto,28">
+
+    <!-- Sidebar -->
+    <Border Grid.Row="0" Grid.Column="0"
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="0,0,1,0">
+      <DockPanel LastChildFill="False" Margin="12">
+
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="4,8,4,16">
+          <Image Source="avares://ForZip.GUI/Assets/ForZip_logo_64x64.png" Width="32" Height="32"/>
+          <TextBlock Text="ForZip"
+                     FontSize="18" FontWeight="Bold"
+                     Foreground="{DynamicResource AccentBrush}"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuZip}"
+                Command="{Binding NavigateToZipCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuUnzip}"
+                Command="{Binding NavigateToUnzipCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuHashBatch}"
+                Command="{Binding NavigateToHashBatchCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuVerify}"
+                Command="{Binding NavigateToVerifyReportCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuPassword}"
+                Command="{Binding NavigateToPasswordGeneratorCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+
+        <Separator DockPanel.Dock="Top"
+                   Background="{DynamicResource BorderBrush}"
+                   Margin="4,12"/>
+
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuSettings}"
+                Command="{Binding NavigateToSettingsCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+        <Button DockPanel.Dock="Top"
+                Content="{Binding MenuAbout}"
+                Command="{Binding NavigateToAboutCommand}"
+                Classes="navButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Margin="0,2"/>
+
+        <TextBlock DockPanel.Dock="Bottom"
+                   Text="v0.9.0 Beta"
+                   FontSize="11"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
+                   HorizontalAlignment="Center"
+                   Margin="0,12,0,4"/>
+      </DockPanel>
+    </Border>
+
+    <!-- Área de contenido -->
+    <ContentControl Grid.Row="0" Grid.Column="1"
+                    Content="{Binding CurrentView}"
+                    Margin="16"/>
+
+    <!-- Log Console -->
+    <views:LogConsoleView Grid.Row="1" Grid.Column="1"
+                          DataContext="{Binding LogConsole}"/>
+
+    <!-- Barra de estado -->
+    <Border Grid.Row="2" Grid.ColumnSpan="2"
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="12,4">
+        <TextBlock Grid.Column="0"
+                   Text="{Binding StatusReady}"
+                   FontSize="11"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
+                   VerticalAlignment="Center"/>
+        <Button Grid.Column="1"
+                Content="ES | EN"
+                Command="{Binding ToggleLanguageCommand}"
+                Classes="linkButton"
+                FontSize="11"/>
+      </Grid>
+    </Border>
+  </Grid>
+
+  <Window.Styles>
+    <Style Selector="Button.navButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="FontSize" Value="13"/>
+    </Style>
+    <Style Selector="Button.navButton:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+    </Style>
+    <Style Selector="Button.linkButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="6,2"/>
+    </Style>
+  </Window.Styles>
+</Window>

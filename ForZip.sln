@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4B8C6F3F-DEDE-4F8B-AA7F-75DA2CC446B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForZip.Core", "src\ForZip.Core\ForZip.Core.csproj", "{551BAA3B-3C44-498B-89DC-E9C60B1CBECC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForZip.GUI", "src\ForZip.GUI\ForZip.GUI.csproj", "{D2C78F45-65EC-4804-89D3-70A04F64886E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForZip.Cli", "src\ForZip.Cli\ForZip.Cli.csproj", "{06C11526-8E4B-47F4-8567-3C67F94F07E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F11F4ECE-BB99-4C78-8380-8CE7FAF87F7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForZip.Tests", "tests\ForZip.Tests\ForZip.Tests.csproj", "{C101AC08-E980-4126-A97B-7E9E32733E21}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{551BAA3B-3C44-498B-89DC-E9C60B1CBECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{551BAA3B-3C44-498B-89DC-E9C60B1CBECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{551BAA3B-3C44-498B-89DC-E9C60B1CBECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{551BAA3B-3C44-498B-89DC-E9C60B1CBECC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2C78F45-65EC-4804-89D3-70A04F64886E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2C78F45-65EC-4804-89D3-70A04F64886E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2C78F45-65EC-4804-89D3-70A04F64886E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2C78F45-65EC-4804-89D3-70A04F64886E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06C11526-8E4B-47F4-8567-3C67F94F07E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06C11526-8E4B-47F4-8567-3C67F94F07E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06C11526-8E4B-47F4-8567-3C67F94F07E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06C11526-8E4B-47F4-8567-3C67F94F07E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C101AC08-E980-4126-A97B-7E9E32733E21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C101AC08-E980-4126-A97B-7E9E32733E21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C101AC08-E980-4126-A97B-7E9E32733E21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C101AC08-E980-4126-A97B-7E9E32733E21}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{551BAA3B-3C44-498B-89DC-E9C60B1CBECC} = {4B8C6F3F-DEDE-4F8B-AA7F-75DA2CC446B8}
+		{D2C78F45-65EC-4804-89D3-70A04F64886E} = {4B8C6F3F-DEDE-4F8B-AA7F-75DA2CC446B8}
+		{06C11526-8E4B-47F4-8567-3C67F94F07E9} = {4B8C6F3F-DEDE-4F8B-AA7F-75DA2CC446B8}
+		{C101AC08-E980-4126-A97B-7E9E32733E21} = {F11F4ECE-BB99-4C78-8380-8CE7FAF87F7E}
+	EndGlobalSection
+EndGlobal

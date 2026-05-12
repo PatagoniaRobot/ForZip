@@ -1,0 +1,153 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+             x:Class="ForZip.GUI.Views.HashBatchView"
+             x:DataType="vm:HashBatchViewModel"
+             DragDrop.AllowDrop="True">
+
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" Margin="4">
+
+    <TextBlock Grid.Row="0"
+               Text="{Binding Title}"
+               FontSize="16" FontWeight="SemiBold"
+               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+    <Border Grid.Row="1"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="16"
+            MinHeight="80"
+            Margin="0,12,0,0">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+        <TextBlock Text="{Binding LabelDropZone}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
+                   HorizontalAlignment="Center"/>
+        <Button Content="{Binding ButtonSelectFiles}"
+                Click="OnBrowseFilesClick"
+                HorizontalAlignment="Center"
+                Margin="0,8,0,0"/>
+      </StackPanel>
+    </Border>
+
+    <DockPanel Grid.Row="2" Margin="0,12,0,0">
+      <TextBlock Text="{Binding LabelAlgorithms}"
+                 Foreground="{DynamicResource TextSecondaryBrush}"
+                 VerticalAlignment="Center"
+                 Margin="0,0,12,0"/>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <CheckBox Content="MD5" IsChecked="{Binding UseMd5}"/>
+        <CheckBox Content="SHA-1" IsChecked="{Binding UseSha1}"/>
+        <CheckBox Content="SHA-256" IsChecked="{Binding UseSha256}"/>
+        <CheckBox Content="SHA-512" IsChecked="{Binding UseSha512}"/>
+      </StackPanel>
+    </DockPanel>
+
+    <DockPanel Grid.Row="3" Margin="0,12,0,4">
+      <Button DockPanel.Dock="Right"
+              Content="{Binding ButtonClear}"
+              Command="{Binding ClearAllCommand}"/>
+      <TextBlock Text="{Binding Rows.Count, StringFormat='Archivos en lista ({0})'}"
+                 Foreground="{DynamicResource TextPrimaryBrush}"
+                 VerticalAlignment="Center"/>
+    </DockPanel>
+
+    <Border Grid.Row="4"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4"
+            Background="{DynamicResource BgCardBrush}">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:HashRowItem">
+              <Grid ColumnDefinitions="40,200,80,*" Margin="6,4">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Index}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding FileName}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding Size}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"
+                           Margin="8,0"/>
+                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Sha256}"
+                             FontFamily="Consolas,monospace"
+                             FontSize="11"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding Sha256, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  <TextBlock Text="{Binding Md5}"
+                             FontFamily="Consolas,monospace"
+                             FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding Md5, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  <TextBlock Text="{Binding Sha1}"
+                             FontFamily="Consolas,monospace"
+                             FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding Sha1, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  <TextBlock Text="{Binding Sha512}"
+                             FontFamily="Consolas,monospace"
+                             FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding Sha512, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  <TextBlock Text="{Binding StatusText}"
+                             FontStyle="Italic"
+                             FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+
+    <ProgressBar Grid.Row="5"
+                 Minimum="0" Maximum="100"
+                 Value="{Binding ProgressPercent}"
+                 Height="8"
+                 Margin="0,12,0,0"
+                 IsVisible="{Binding IsProcessing}"
+                 Foreground="{DynamicResource ProgressFillBrush}"
+                 Background="{DynamicResource ProgressBgBrush}"/>
+
+    <TextBlock Grid.Row="6"
+               Text="{Binding StatusMessage}"
+               Foreground="{DynamicResource TextSecondaryBrush}"
+               Margin="0,8,0,0"/>
+
+    <StackPanel Grid.Row="7"
+                Orientation="Horizontal"
+                Spacing="8"
+                HorizontalAlignment="Center"
+                Margin="0,12,0,0">
+      <Button Content="{Binding ButtonCalculate}"
+              Command="{Binding ComputeHashesCommand}"
+              Background="{DynamicResource AccentBrush}"
+              Foreground="White"
+              Padding="20,8"
+              IsEnabled="{Binding !IsProcessing}"/>
+      <Button Content="{Binding ButtonCancel}"
+              Command="{Binding ComputeHashesCancelCommand}"
+              IsVisible="{Binding IsProcessing}"
+              Padding="20,8"/>
+      <Button Content="{Binding ButtonExport}"
+              Click="OnExportReportClick"
+              Padding="20,8"
+              IsEnabled="{Binding AllHashesComputed}"/>
+    </StackPanel>
+
+  </Grid>
+</UserControl>
