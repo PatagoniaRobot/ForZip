@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 9 de mayo de 2026  
 **Autor:** Claudio Andino (claudio@patagoniarobot.com)  
-**Proyecto:** ForZip v0.9.0 Beta  
+**Proyecto:** ForZip v1.0.0  
 
 > Este documento define las convenciones de código obligatorias para todo el proyecto ForZip.  
 > Aplica a agentes de IA ejecutores y a cualquier contribuidor humano.  
@@ -467,7 +467,7 @@ public async Task<HashResult> ComputeHashesAsync(
 - Nunca logear contraseñas, datos personales, ni contenido de archivos.
 
 ```
-[2026-05-09 14:30:00.123] [INFO ] Aplicación iniciada — ForZip v0.9.0 Beta
+[2026-05-09 14:30:00.123] [INFO ] Aplicación iniciada — ForZip v1.0.0
 [2026-05-09 14:30:05.456] [INFO ] Compresión iniciada: 3 archivos, nivel 5, AES-256 activo
 [2026-05-09 14:30:12.789] [INFO ] Compresión completada: caso_542_evidencia.zip (3.102.445 bytes)
 [2026-05-09 14:30:13.001] [INFO ] Informe generado: ForZip_Report_20260509_143013.txt

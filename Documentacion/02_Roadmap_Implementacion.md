@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 9 de mayo de 2026  
 **Autor:** Claudio Andino (claudio@patagoniarobot.com)  
-**Proyecto:** ForZip v0.9.0 Beta  
+**Proyecto:** ForZip v1.0.0  
 **Licencia:** Apache 2.0  
 
 > Este documento es el plan maestro de ejecución del proyecto ForZip.  
@@ -392,7 +392,7 @@ D:\PROYECTOS\ForZip\
 1. **MainWindow:**
    - Sidebar izquierda con botones de navegación (íconos + texto).
    - Área de contenido a la derecha que muestra el `CurrentView`.
-   - Barra de título personalizada con logo + nombre "ForZip v0.9.0 Beta".
+   - Barra de título personalizada con logo + nombre "ForZip v1.0.0".
    - DataTemplates para mapear cada ViewModel a su View.
 
 2. **ZipView:**
@@ -604,7 +604,7 @@ ForZip.exe --version
    - Instrucciones de uso GUI y CLI.
    - Tabla de hashes de los binarios publicados.
 
-2. Crear `CHANGELOG.md` con las notas de la v0.9.0 Beta.
+2. Crear `CHANGELOG.md` con las notas de la v1.0.0.
 
 3. Revisar que el disclaimer aparece en:
    - `README.md` ✓
@@ -631,7 +631,7 @@ dotnet publish ForZip.GUI/ForZip.GUI.csproj -c Release -r win-x64 --self-contain
 
 ---
 
-## Checklist Final de Cierre v0.9.0 Beta
+## Checklist Final de Cierre v1.0.0
 
 - [ ] `dotnet build ForZip.sln` → 0 errores, 0 warnings
 - [ ] `dotnet test` → todos los tests pasan

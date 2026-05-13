@@ -40,7 +40,7 @@ public partial class AboutViewModel : ObservableObject
     }
 
     public string AppName => "ForZip";
-    public string Version => "v0.9.0 Beta";
+    public string Version => "v1.0.0";
     public string Subtitle => "Forensic ZIP Tool — Open Source";
     public string Author => "Claudio Andino";
     public string Email => "claudio@patagoniarobot.com";

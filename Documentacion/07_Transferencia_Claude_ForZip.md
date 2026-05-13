@@ -117,7 +117,7 @@ D:\PROYECTOS\ForZip\
 ### Fase 7 — Documentación de Usuario
 
 - Actualizar README.md con screenshots y uso
-- Crear CHANGELOG.md v0.9.0 Beta
+- Crear CHANGELOG.md v1.0.0
 - Verificar disclaimer en los 4 lugares (README, AboutView, informe, Help.html)
 - Verificar encabezado Apache 2.0 en todos los .cs
 
@@ -161,7 +161,7 @@ D:\PROYECTOS\ForZip\
 | ZIP | SharpZipLib (customizado para Split + Zip64) |
 | Tests | xUnit, 24 tests |
 | Licencia | Apache 2.0 |
-| Versión actual | v0.9.5 Beta (según handover del agente) |
+| Versión actual | v1.0.0 (según handover del agente) |
 | Paleta | #1a1a2e / #0f172a / #334155 / #e2e8f0 / #10B981 / #ef4444 |
 | Binario | Single-file self-contained win-x64 |
 | Idiomas | ES + EN, autodetect del SO |

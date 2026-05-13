@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 9 de mayo de 2026  
 **Autor:** Claudio Andino (claudio@patagoniarobot.com)  
-**Proyecto:** ForZip v0.9.0 Beta  
+**Proyecto:** ForZip v1.0.0  
 
 > Este documento define el layout visual de cada pantalla de ForZip.  
 > Es la referencia obligatoria para la Fase 3 (Interfaz Gráfica).  
@@ -100,7 +100,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  🔒 ForZip v0.9.0 Beta                                        ─  □  ✕    │
+│  🔒 ForZip v1.0.0                                             ─  □  ✕    │
 ├────────────────────┬────────────────────────────────────────────────────────┤
 │                    │                                                        │
 │   ┌──────────────┐ │                                                        │
@@ -128,7 +128,7 @@
 │   │ ℹ  Acerca de │ │                                                        │
 │   └──────────────┘ │                                                        │
 │                    │                                                        │
-│   ─── v0.9.0 ─── │                                                          │
+│   ─── v1.0.0 ─── │                                                          │
 ├────────────────────┴────────────────────────────────────────────────────────┤
 │  Estado: Listo                                                    ES | EN  │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -503,7 +503,7 @@
 │                         │          │                               │
 │                         └──────────┘                               │
 │                                                                    │
-│                     ForZip v0.9.0 Beta                              │
+│                     ForZip v1.0.0                                   │
 │              Forensic ZIP Tool — Open Source                        │
 │                                                                    │
 │  ─────────────────────────────────────────────────────────────     │

@@ -59,7 +59,7 @@ public interface ILocalizationService
 ```json
 {
   "app_name": "ForZip",
-  "app_version": "v0.9.0 Beta",
+  "app_version": "v1.0.0",
   "zip_success": "Compresión completada exitosamente.",
   "unzip_success": "Extracción completada exitosamente.",
   "hash_success": "Cálculo de hashes completado.",
@@ -174,7 +174,7 @@ public interface ILocalizationService
 ```json
 {
   "app_name": "ForZip",
-  "app_version": "v0.9.0 Beta",
+  "app_version": "v1.0.0",
   "zip_success": "Compression completed successfully.",
   "unzip_success": "Extraction completed successfully.",
   "hash_success": "Hash calculation completed.",
@@ -548,7 +548,7 @@ public class ReportData
     public long? ZipFileSize { get; set; }
     public string? ZipHash { get; set; }
     public List<HashResult> FileResults { get; set; } = new();
-    public string ForZipVersion { get; set; } = "v0.9.0 Beta";
+    public string ForZipVersion { get; set; } = "v1.0.0";
 }
 ```
 
