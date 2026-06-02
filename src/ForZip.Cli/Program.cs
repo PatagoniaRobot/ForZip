@@ -33,7 +33,7 @@ internal static class Program
 
         if (parser.HasOption("-v", "--version"))
         {
-            Console.WriteLine($"ForZip v1.0.0");
+            Console.WriteLine($"ForZip v1.1.0");
             return 0;
         }
 

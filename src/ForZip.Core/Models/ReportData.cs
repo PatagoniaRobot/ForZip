@@ -39,5 +39,5 @@ public class ReportData
     public long? ZipFileSize { get; set; }
     public string? ZipHash { get; set; }
     public List<HashResult> FileResults { get; set; } = new();
-    public string ForZipVersion { get; set; } = "v1.0.0";
+    public string ForZipVersion { get; set; } = "v1.1.0";
 }

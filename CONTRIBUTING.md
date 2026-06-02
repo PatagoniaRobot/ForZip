@@ -1,1 +1,20 @@
-# Contributing to ForZip  Thank you for your interest in contributing to ForZip.  ## Code of Conduct  Be respectful. Stay technical, stay constructive.  ## Reporting Issues  Include: ForZip version, OS and version, steps to reproduce, expected vs actual behavior, sample input (never real evidence).  ## Proposing Features  ForZip aims to remain focused, simple, and auditable. Features are evaluated against: - Forensic, integrity, or auditability value. - Portability (no installers, no registry, no telemetry). - Complexity vs benefit.  ## Submitting Code  ### Development Setup  1. Install .NET 8 SDK from https://dotnet.microsoft.com/download. 2. Clone the repository. 3. Run `dotnet restore` and `dotnet build`. 4. Run `dotnet test` and confirm all tests pass before changes.  ### Pull Request Checklist  - All existing tests pass. - New code is covered by tests where applicable. - Every new file has the standard Apache 2.0 header. - Comments in Spanish; identifiers in English. - No hardcoded paths, no telemetry, no calls to external services. - UI strings added to both Spanish and English resource files. - CHANGELOG.md updated under "Unreleased".  ### Branch Naming  - `feature/<short-description>` for new features. - `fix/<short-description>` for bug fixes. - `docs/<short-description>` for documentation-only changes.  ## Licensing of Contributions  By submitting a contribution, you agree that your contribution is licensed under the **Apache License 2.0**.  ## Questions  claudio@patagoniarobot.com
+# Contributing to ForZip / Contribuir a ForZip
+
+Thank you for your interest in contributing to ForZip.
+Gracias por tu interés en contribuir a ForZip.
+
+The full **bilingual (English / Spanish)** contributor and pull-request guide lives at:
+La guía completa **bilingüe (Inglés / Español)** para contribuyentes y pull requests está en:
+
+👉 [`Documentation/CONTRIBUTING.md`](Documentation/CONTRIBUTING.md)
+
+It covers project layout, the forensic integrity model, development setup, coding
+standards, and the pull-request checklist.
+
+Cubre la estructura del proyecto, el modelo de integridad forense, la preparación del
+entorno, los estándares de código y el checklist de pull request.
+
+By submitting a contribution you agree it is licensed under the **Apache License 2.0**.
+Al enviar una contribución aceptás que queda licenciada bajo la **Apache License 2.0**.
+
+**Questions / Consultas:** claudio@patagoniarobot.com

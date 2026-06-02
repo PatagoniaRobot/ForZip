@@ -1,6 +1,6 @@
 {
   "app_name": "ForZip",
-  "app_version": "v1.0.0",
+  "app_version": "v1.1.0",
   "zip_success": "Compression completed successfully.",
   "unzip_success": "Extraction completed successfully.",
   "hash_success": "Hash calculation completed.",
