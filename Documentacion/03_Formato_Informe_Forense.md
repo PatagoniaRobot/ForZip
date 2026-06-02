@@ -8,6 +8,23 @@
 > Este documento define el formato exacto del informe forense `.txt` que genera ForZip.  
 > Es la referencia obligatoria para `ReportService`. Cualquier desviación es un bug.
 
+> **⚠️ ACTUALIZACIÓN (post-1.0.0) — modelo de integridad revisado**
+>
+> La **línea auto-firmante** descrita más abajo (un hash SHA-256 embebido como última
+> línea del propio informe) fue **eliminada**. El modelo de integridad actual es:
+>
+> - **Sidecar `.sha256`**: archivo externo con el hash SHA-256 del informe. `VerifyReport`
+>   ahora contrasta el informe contra este sidecar (no contra una línea interna).
+> - **Manifiesto `.manifest.json`**: documento legible por máquina (operador, caso,
+>   parámetros, y por cada archivo: ruta de origen, tamaño, marca temporal UTC y hashes).
+>   Es la fuente de verdad para la **verificación de evidencia** (re-hash del contenido
+>   del ZIP, veredicto archivo por archivo).
+> - **Firma digital opcional** del manifiesto: CMS/PKCS#7 desacoplada (`.p7s`) con el
+>   certificado X.509 del operador.
+>
+> Las secciones sobre "línea auto-firmante" y su algoritmo de verificación quedan como
+> referencia histórica del diseño 1.0.0; no reflejan el comportamiento actual.
+
 ---
 
 ## Especificaciones Técnicas del Archivo

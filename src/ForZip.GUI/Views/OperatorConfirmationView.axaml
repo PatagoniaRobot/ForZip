@@ -63,6 +63,23 @@
           <CheckBox Content="Generar archivo de hash externo (.sha256)"
                     IsChecked="{Binding GenerateExternalHash}"
                     Margin="0,8,0,0"/>
+
+          <CheckBox Content="Firmar manifiesto digitalmente (CMS/PKCS#7)"
+                    IsChecked="{Binding SignManifest}"/>
+
+          <StackPanel Spacing="6" IsVisible="{Binding SignManifest}">
+            <TextBlock Text="Certificado (.pfx / PKCS#12)"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Text="{Binding CertificatePath}"
+                       Watermark="Ruta al certificado del operador"/>
+              <Button Grid.Column="1" Content="..." Width="40" Margin="8,0,0,0" Click="OnBrowseCertClick"/>
+            </Grid>
+            <TextBox Text="{Binding CertificatePassword}"
+                     PasswordChar="●"
+                     Watermark="Contraseña del certificado (si tiene)"/>
+          </StackPanel>
         </StackPanel>
       </Border>
     </ScrollViewer>

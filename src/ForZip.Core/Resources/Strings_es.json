@@ -54,7 +54,6 @@
   "report_zip_hash": "HASH GLOBAL DEL ARCHIVO ZIP",
   "report_disclaimer_title": "DISCLAIMER",
   "report_disclaimer_text": "Este informe fue generado automáticamente por ForZip, una herramienta de\nsoftware libre distribuida bajo licencia Apache 2.0. Los resultados son\nproporcionados \"TAL CUAL\" (AS IS), sin garantías de ningún tipo. Es\nresponsabilidad exclusiva del operador validar la idoneidad de esta\nherramienta y sus resultados para el uso forense en su jurisdicción.\nForZip no reemplaza el criterio profesional del perito actuante.",
-  "report_self_hash": "SHA-256 de este informe (excluyendo esta línea): {0}",
   "report_op_name": "Nombre",
   "report_op_title": "Cargo",
   "report_op_org": "Organismo",

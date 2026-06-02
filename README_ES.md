@@ -4,11 +4,12 @@
 
 ## Características Principales
 
-*   **Procesamiento de Doble Fase**: Realiza el cálculo de hashes criptográficos de los archivos originales *antes* de iniciar la compresión, permitiendo documentar el estado exacto de la evidencia en su origen.
+*   **Hashing en un Solo Pase**: Calcula los hashes criptográficos de los archivos originales *durante* la compresión (una sola lectura de disco), documentando el estado exacto de la evidencia en su origen sin duplicar el I/O.
 *   **Seguridad Avanzada**: Implementa cifrado de grado militar **AES-256** para proteger el contenido de los contenedores de evidencia.
 *   **Soporte de Grandes Volúmenes**: Utiliza tecnología **Zip64** de forma nativa, permitiendo gestionar contenedores de evidencia que superan los 4GB, ideal para imágenes de disco y grandes bases de datos.
-*   **Informes Forenses Automáticos**: Genera reportes detallados en formato `.report.txt` que incluyen metadatos del operador, detalles del sistema, parámetros de la operación y hashes individuales de cada archivo procesado.
-*   **Verificación de Integridad**: Permite validar contenedores de evidencia existentes comparando los archivos actuales contra informes forenses generados previamente.
+*   **Informes y Manifiesto Forenses**: Genera un reporte legible `.report.txt` (metadatos del operador, sistema, parámetros y hashes individuales, con rutas de origen y marcas temporales) y un **manifiesto `.manifest.json`** legible por máquina, fuente de verdad para la verificación automática.
+*   **Verificación de Evidencia**: Re-hashea el contenido del ZIP contra su manifiesto y emite un veredicto **archivo por archivo** (OK / alterado / faltante / añadido), además de verificar el hash global del contenedor.
+*   **Firma Digital**: Firma opcional del manifiesto (CMS/PKCS#7) con el certificado X.509 del operador, haciendo evidente cualquier manipulación. Verificable de forma independiente (p. ej. con OpenSSL).
 *   **Interfaz Moderna y Dinámica**: Diseñada con una estética oscura premium, optimizada para largos periodos de trabajo y con soporte completo para cambio de idioma (Español/Inglés) en tiempo real.
 
 ## Módulos del Software
@@ -16,7 +17,7 @@
 1.  **Empaquetar (Compress)**: El núcleo del sistema. Permite agregar archivos y carpetas, seleccionar algoritmos de hash (MD5, SHA-1, SHA-256, SHA-512), definir el nivel de compresión y aplicar cifrado.
 2.  **Extraer (Extract)**: Descompresión segura de archivos ZIP, con soporte para contenedores cifrados y registro detallado de eventos en la bitácora.
 3.  **Hash Batch**: Herramienta de cálculo masivo de hashes para archivos en disco sin necesidad de empaquetarlos, ideal para inventarios rápidos de evidencia.
-4.  **Verificar**: Motor de auditoría que carga reportes ForZip y verifica que la evidencia en disco no haya sido alterada.
+4.  **Verificar**: Motor de auditoría que verifica la integridad de un informe (contra su `.sha256`) o re-hashea un contenedor ZIP contra su manifiesto, validando además la firma digital cuando existe.
 5.  **Generador de Contraseñas**: Utilidad integrada para crear contraseñas de alta entropía adecuadas para la protección de evidencia sensible.
 
 ## Guía Rápida de Uso
@@ -25,13 +26,13 @@
     *   Arrastre los archivos a la zona de "Empaquetar".
     *   Seleccione los algoritmos de hash deseados.
     *   Defina la ruta del archivo de salida.
-    *   Presione "Empaquetar". Se realizará primero el hasheado (0-50% del progreso) y luego la compresión (50-100%).
-    *   Al finalizar, complete los datos del operador para generar el informe forense.
+    *   Presione "Empaquetar". El hasheado y la compresión ocurren en un solo pase (0-100%).
+    *   Al finalizar, complete los datos del operador para generar el informe forense (opcionalmente, firme el manifiesto con su certificado).
 
 2.  **Para verificar integridad**:
     *   Vaya a la pestaña "Verificar".
-    *   Cargue el archivo de informe `.report.txt`.
-    *   El sistema buscará los archivos referenciados y validará sus hashes, emitiendo un veredicto de integridad.
+    *   Cargue el informe `.report.txt` (verifica su `.sha256`) o el `.manifest.json` (re-hashea la evidencia del ZIP).
+    *   El sistema emite un veredicto archivo por archivo y, si el manifiesto está firmado, valida la firma digital.
 
 ## Requisitos del Sistema
 

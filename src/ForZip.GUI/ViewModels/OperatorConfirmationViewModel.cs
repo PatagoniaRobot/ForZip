@@ -50,6 +50,15 @@ public partial class OperatorConfirmationViewModel : ObservableObject
     [ObservableProperty]
     private bool _generateExternalHash = true;
 
+    [ObservableProperty]
+    private bool _signManifest;
+
+    [ObservableProperty]
+    private string _certificatePath = string.Empty;
+
+    [ObservableProperty]
+    private string _certificatePassword = string.Empty;
+
     public OperatorConfirmationViewModel(OperatorInfo info)
     {
         Name = info.Name ?? string.Empty;
@@ -69,7 +78,10 @@ public partial class OperatorConfirmationViewModel : ObservableObject
             Email = string.IsNullOrWhiteSpace(Email) ? null : Email,
             Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone
         },
-        GenerateExternalHash = GenerateExternalHash
+        GenerateExternalHash = GenerateExternalHash,
+        SignManifest = SignManifest && !string.IsNullOrWhiteSpace(CertificatePath),
+        CertificatePath = string.IsNullOrWhiteSpace(CertificatePath) ? null : CertificatePath,
+        CertificatePassword = string.IsNullOrEmpty(CertificatePassword) ? null : CertificatePassword
     };
 
     [RelayCommand]

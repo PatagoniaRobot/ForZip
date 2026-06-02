@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ForZip.Core\ForZip.Core.csproj" />
+    <ProjectReference Include="..\..\src\ForZip.Cli\ForZip.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

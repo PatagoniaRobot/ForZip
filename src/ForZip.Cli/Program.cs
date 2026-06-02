@@ -45,6 +45,7 @@ internal static class Program
                 "unzip" => await new UnzipCommand(_zipService, _localization).ExecuteAsync(parser),
                 "hash" => await new HashCommand(_hashService, _reportService, _localization).ExecuteAsync(parser),
                 "verify" => await new VerifyCommand(_reportService, _verificationService, _localization).ExecuteAsync(parser),
+                "sign" => await new SignCommand(_signatureService, _localization).ExecuteAsync(parser),
                 "genpass" => new GenPassCommand(_passwordService, _localization).Execute(parser),
                 _ => UnknownCommand(parser.Command)
             };
@@ -90,6 +91,7 @@ internal static class Program
         Console.WriteLine("  unzip    Extrae el contenido de un archivo ZIP.");
         Console.WriteLine("  hash     Calcula hashes de uno o más archivos.");
         Console.WriteLine("  verify   Verifica un informe (.sha256) o la evidencia contra su manifiesto.");
+        Console.WriteLine("  sign     Firma un manifiesto existente (CMS) con un certificado X.509.");
         Console.WriteLine("  genpass  Genera una contraseña aleatoria segura.");
         Console.WriteLine("\nOpciones de zip/hash:");
         Console.WriteLine("  --operator <nombre>  Nombre del operador para la cadena de custodia.");
@@ -105,6 +107,7 @@ internal static class Program
         Console.WriteLine("  forzip hash -i *.* --algo sha256,md5");
         Console.WriteLine("  forzip verify -r informe.txt");
         Console.WriteLine("  forzip verify -m evidencia.zip.manifest.json -z evidencia.zip");
+        Console.WriteLine("  forzip sign -m evidencia.zip.manifest.json -c operador.pfx -p clave");
         Console.WriteLine("\nGlobal:");
         Console.WriteLine("  -h, --help     Muestra esta ayuda.");
         Console.WriteLine("  -v, --version  Muestra la versión de la aplicación.");

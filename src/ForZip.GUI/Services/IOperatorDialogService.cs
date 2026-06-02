@@ -31,6 +31,15 @@ public class OperatorConfirmationResult
 {
     public OperatorInfo Operator { get; set; } = new();
     public bool GenerateExternalHash { get; set; }
+
+    /// <summary>Si el usuario pidió firmar digitalmente el manifiesto.</summary>
+    public bool SignManifest { get; set; }
+
+    /// <summary>Ruta al certificado PFX/PKCS#12 del operador.</summary>
+    public string? CertificatePath { get; set; }
+
+    /// <summary>Contraseña del certificado, si la tiene.</summary>
+    public string? CertificatePassword { get; set; }
 }
 
 public interface IOperatorDialogService

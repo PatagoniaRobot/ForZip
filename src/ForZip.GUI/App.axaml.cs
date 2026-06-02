@@ -64,7 +64,7 @@ public partial class App : Application
 
             var mainViewModel = new MainWindowViewModel(
                 zipService, hashService, passwordService,
-                reportService, verificationService, configService, localization, themeService,
+                reportService, verificationService, signatureService, configService, localization, themeService,
                 logService, operatorDialog);
 
             UpdateResources(localization);

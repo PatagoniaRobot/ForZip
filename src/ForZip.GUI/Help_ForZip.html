@@ -46,8 +46,8 @@
             <div class="card">
                 <h2>Descripción</h2>
                 <p><strong>ForZip</strong> es una herramienta forense de compresión y verificación diseñada para garantizar la integridad de la evidencia digital durante su empaquetado y transporte.</p>
-                <p>A diferencia de las herramientas de compresión convencionales, ForZip implementa un flujo de trabajo forense que incluye el cálculo de hashes criptográficos (MD5, SHA-1, SHA-256, SHA-512) de los archivos originales antes de su inclusión en el contenedor ZIP, asegurando la trazabilidad desde el origen.</p>
-                <p>Soporta cifrado fuerte <strong>AES-256</strong>, generación de informes forenses automáticos y verificación de integridad mediante la comparación de hashes de archivos existentes contra reportes previos.</p>
+                <p>A diferencia de las herramientas de compresión convencionales, ForZip implementa un flujo de trabajo forense que calcula los hashes criptográficos (MD5, SHA-1, SHA-256, SHA-512) de los archivos originales durante su inclusión en el contenedor ZIP (un solo pase), asegurando la trazabilidad desde el origen.</p>
+                <p>Soporta cifrado fuerte <strong>AES-256</strong>, generación de informes forenses y de un manifiesto legible por máquina, firma digital opcional (CMS/PKCS#7) y verificación de evidencia re-hasheando el contenido del ZIP contra su manifiesto.</p>
             </div>
 
             <div class="card">
@@ -59,7 +59,7 @@
                             <li>Defina el <strong>Nivel de compresión</strong> (desde Almacenamiento hasta Ultra).</li>
                             <li>Opcionalmente, active el <strong>Cifrado AES-256</strong> y genere una contraseña segura.</li>
                             <li>Seleccione los <strong>Algoritmos de hash</strong> deseados para documentar la evidencia.</li>
-                            <li>Presione "Empaquetar". El proceso incluye una fase de hasheado inicial seguida de la compresión, con feedback en tiempo real.</li>
+                            <li>Presione "Empaquetar". El hasheado y la compresión ocurren en un solo pase, con feedback en tiempo real.</li>
                         </ul>
                     </li>
                     <li><strong>Extraer:</strong>
@@ -69,8 +69,8 @@
                             <li>Durante la extracción, se muestra el progreso y se registran los eventos en la bitácora.</li>
                         </ul>
                     </li>
-                    <li><strong>Informe Forense:</strong> Al finalizar un empaquetado con hashes, el sistema solicita los datos del operador para generar un archivo <code>.report.txt</code>. Este informe documenta metadatos, tiempos, y los hashes de cada archivo procesado.</li>
-                    <li><strong>Verificar:</strong> Permite cargar un informe forense generado previamente para verificar que los archivos en el disco coincidan exactamente con los hashes registrados en el momento de la captura.</li>
+                    <li><strong>Informe Forense:</strong> Al finalizar un empaquetado con hashes, el sistema solicita los datos del operador para generar el <code>.report.txt</code> y el <code>.manifest.json</code> (y, opcionalmente, firmar el manifiesto). El informe documenta metadatos, tiempos, hashes, rutas de origen y marcas temporales de cada archivo.</li>
+                    <li><strong>Verificar:</strong> Permite cargar un informe (verifica su <code>.sha256</code>) o un manifiesto <code>.manifest.json</code> para re-hashear la evidencia del ZIP, emitiendo un veredicto archivo por archivo y validando la firma digital cuando existe.</li>
                     <li><strong>Hash Batch:</strong> Utilidad para calcular múltiples hashes de archivos de forma masiva sin necesidad de comprimirlos.</li>
                 </ol>
                 <div class="note">
@@ -93,8 +93,8 @@
             <div class="card">
                 <h2>Description</h2>
                 <p><strong>ForZip</strong> is a forensic compression and verification tool designed to ensure the integrity of digital evidence during packing and transportation.</p>
-                <p>Unlike conventional compression tools, ForZip implements a forensic workflow that includes computing cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512) of the original files before including them in the ZIP container, ensuring traceability from the source.</p>
-                <p>It supports strong <strong>AES-256</strong> encryption, automatic forensic report generation, and integrity verification by comparing existing file hashes against previous reports.</p>
+                <p>Unlike conventional compression tools, ForZip implements a forensic workflow that computes cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512) of the original files while including them in the ZIP container (a single pass), ensuring traceability from the source.</p>
+                <p>It supports strong <strong>AES-256</strong> encryption, forensic report and machine-readable manifest generation, optional digital signing (CMS/PKCS#7), and evidence verification by re-hashing the ZIP contents against its manifest.</p>
             </div>
 
             <div class="card">
@@ -106,7 +106,7 @@
                             <li>Set the <strong>Compression Level</strong> (from Store to Ultra).</li>
                             <li>Optionally, enable <strong>AES-256 Encryption</strong> and generate a secure password.</li>
                             <li>Select the desired <strong>Hash Algorithms</strong> to document the evidence.</li>
-                            <li>Press "Pack". The process includes an initial hashing phase followed by compression, with real-time feedback.</li>
+                            <li>Press "Pack". Hashing and compression happen in a single pass, with real-time feedback.</li>
                         </ul>
                     </li>
                     <li><strong>Extract:</strong>
@@ -116,8 +116,8 @@
                             <li>During extraction, progress is displayed and events are recorded in the log.</li>
                         </ul>
                     </li>
-                    <li><strong>Forensic Report:</strong> Upon completing a packing operation with hashes, the system requests operator details to generate a <code>.report.txt</code> file. This report documents metadata, timestamps, and hashes for every processed file.</li>
-                    <li><strong>Verify:</strong> Allows loading a previously generated forensic report to verify that files on disk exactly match the hashes recorded at the time of capture.</li>
+                    <li><strong>Forensic Report:</strong> Upon completing a packing operation with hashes, the system requests operator details to generate the <code>.report.txt</code> and the <code>.manifest.json</code> (and, optionally, sign the manifest). The report documents metadata, timestamps, hashes, source paths, and modification times for every processed file.</li>
+                    <li><strong>Verify:</strong> Load a report (verifies its <code>.sha256</code>) or a <code>.manifest.json</code> to re-hash the ZIP evidence, issuing a per-file verdict and validating the digital signature when present.</li>
                     <li><strong>Hash Batch:</strong> Utility to compute multiple hashes for files in bulk without the need for compression.</li>
                 </ol>
                 <div class="note">

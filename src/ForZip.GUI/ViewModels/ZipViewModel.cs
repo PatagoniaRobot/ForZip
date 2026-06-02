@@ -49,6 +49,7 @@ public partial class ZipViewModel : ViewModelBase
     private readonly IHashService _hashService;
     private readonly IPasswordService _passwordService;
     private readonly IReportService _reportService;
+    private readonly ISignatureService _signatureService;
     private readonly IConfigService _configService;
     private readonly ILogService _logService;
     private readonly IOperatorDialogService _operatorDialog;
@@ -108,6 +109,7 @@ public partial class ZipViewModel : ViewModelBase
         IHashService hashService,
         IPasswordService passwordService,
         IReportService reportService,
+        ISignatureService signatureService,
         ILocalizationService localization,
         IConfigService configService,
         ILogService logService,
@@ -117,6 +119,7 @@ public partial class ZipViewModel : ViewModelBase
         _hashService = hashService;
         _passwordService = passwordService;
         _reportService = reportService;
+        _signatureService = signatureService;
         _configService = configService;
         _logService = logService;
         _operatorDialog = operatorDialog;
@@ -446,6 +449,21 @@ public partial class ZipViewModel : ViewModelBase
         var manifestPath = options.OutputPath + ".manifest.json";
         await File.WriteAllTextAsync(manifestPath, _reportService.GenerateManifestJson(data));
         _logService.Info($"Manifiesto forense generado: {Path.GetFileName(manifestPath)}");
+
+        // Firma digital del manifiesto (CMS/PKCS#7) si el operador la solicitó
+        if (result.SignManifest && !string.IsNullOrWhiteSpace(result.CertificatePath))
+        {
+            try
+            {
+                await _signatureService.SignAsync(
+                    manifestPath, result.CertificatePath!, result.CertificatePassword, CancellationToken.None);
+                _logService.Success($"Manifiesto firmado digitalmente: {Path.GetFileName(manifestPath)}.p7s");
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"No se pudo firmar el manifiesto: {ex.Message}");
+            }
+        }
 
         if (result.GenerateExternalHash)
         {
