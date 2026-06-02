@@ -56,6 +56,50 @@ public class HashService : IHashService
         var fileInfo = new FileInfo(filePath);
         var totalSize = fileInfo.Length;
 
+        await using var fs = new FileStream(
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            BufferSize,
+            useAsync: true);
+
+        var hashes = await ComputeHashesCoreAsync(fs, algorithms, totalSize, progress, ct);
+
+        return new HashResult
+        {
+            FilePath = filePath,
+            FileSize = totalSize,
+            Hashes = hashes
+        };
+    }
+
+    public Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
+        Stream stream,
+        HashSet<HashAlgorithmType> algorithms,
+        CancellationToken ct)
+    {
+        if (algorithms == null || algorithms.Count == 0)
+        {
+            throw new ArgumentException("Debe seleccionar al menos un algoritmo.", nameof(algorithms));
+        }
+
+        if (stream == null)
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
+
+        // Sin tamaño conocido no podemos reportar progreso fraccional
+        return ComputeHashesCoreAsync(stream, algorithms, totalSize: -1, progress: null, ct);
+    }
+
+    private static async Task<Dictionary<HashAlgorithmType, string>> ComputeHashesCoreAsync(
+        Stream stream,
+        HashSet<HashAlgorithmType> algorithms,
+        long totalSize,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
         // Una instancia de algoritmo por cada elemento solicitado
         var hashers = new Dictionary<HashAlgorithmType, HashAlgorithm>();
         try
@@ -68,16 +112,8 @@ public class HashService : IHashService
             var buffer = new byte[BufferSize];
             long totalRead = 0;
 
-            await using var fs = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                BufferSize,
-                useAsync: true);
-
             int bytesRead;
-            while ((bytesRead = await fs.ReadAsync(buffer.AsMemory(0, BufferSize), ct)) > 0)
+            while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), ct)) > 0)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -94,30 +130,25 @@ public class HashService : IHashService
                 }
             }
 
-            // TransformFinalBlock necesario aunque el archivo esté vacío
+            // TransformFinalBlock necesario aunque el stream esté vacío
             foreach (var hasher in hashers.Values)
             {
                 hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             }
 
-            var result = new HashResult
-            {
-                FilePath = filePath,
-                FileSize = totalSize
-            };
-
+            var hashes = new Dictionary<HashAlgorithmType, string>();
             foreach (var (algo, hasher) in hashers)
             {
-                result.Hashes[algo] = ToLowerHex(hasher.Hash!);
+                hashes[algo] = ToLowerHex(hasher.Hash!);
             }
 
-            // Si el archivo está vacío reportamos progreso final
+            // Si el contenido estaba vacío reportamos progreso final
             if (totalSize == 0)
             {
                 progress?.Report(1.0);
             }
 
-            return result;
+            return hashes;
         }
         finally
         {
@@ -126,6 +157,34 @@ public class HashService : IHashService
                 hasher.Dispose();
             }
         }
+    }
+
+    public async Task<List<HashResult>> ComputeHashesBatchAsync(
+        IReadOnlyList<string> filePaths,
+        HashSet<HashAlgorithmType> algorithms,
+        int maxDegreeOfParallelism,
+        CancellationToken ct)
+    {
+        if (filePaths == null)
+        {
+            throw new ArgumentNullException(nameof(filePaths));
+        }
+
+        var results = new HashResult[filePaths.Count];
+        var options = new ParallelOptions
+        {
+            CancellationToken = ct,
+            MaxDegreeOfParallelism = maxDegreeOfParallelism <= 0
+                ? Environment.ProcessorCount
+                : maxDegreeOfParallelism
+        };
+
+        await Parallel.ForEachAsync(Enumerable.Range(0, filePaths.Count), options, async (i, token) =>
+        {
+            results[i] = await ComputeHashesAsync(filePaths[i], algorithms, null, token);
+        });
+
+        return results.ToList();
     }
 
     public string ComputeSha256(string text)

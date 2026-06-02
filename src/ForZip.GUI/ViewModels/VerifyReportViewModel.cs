@@ -42,6 +42,7 @@ public partial class VerifyReportViewModel : ObservableObject
 {
     private readonly IReportService _reportService;
     private readonly IHashService _hashService;
+    private readonly IVerificationService _verificationService;
     private readonly ILocalizationService _localization;
 
     [ObservableProperty]
@@ -53,10 +54,15 @@ public partial class VerifyReportViewModel : ObservableObject
     [ObservableProperty]
     private string _detailsText = string.Empty;
 
-    public VerifyReportViewModel(IReportService reportService, IHashService hashService, ILocalizationService localization)
+    public VerifyReportViewModel(
+        IReportService reportService,
+        IHashService hashService,
+        IVerificationService verificationService,
+        ILocalizationService localization)
     {
         _reportService = reportService;
         _hashService = hashService;
+        _verificationService = verificationService;
         _localization = localization;
     }
 
@@ -85,6 +91,13 @@ public partial class VerifyReportViewModel : ObservableObject
 
         Status = VerificationStatus.NotRun;
         DetailsText = "Verificando integridad...";
+
+        // Si el archivo es un manifiesto, verificamos la evidencia (re-hash del ZIP)
+        if (ReportFilePath.EndsWith(".manifest.json", StringComparison.OrdinalIgnoreCase))
+        {
+            await VerifyArchiveAsync();
+            return;
+        }
 
         // Intentar verificación externa (.sha256)
         var hashFilePath = ReportFilePath + ".sha256";
@@ -138,6 +151,58 @@ public partial class VerifyReportViewModel : ObservableObject
         else
         {
             Status = VerificationStatus.Invalid;
+        }
+    }
+
+    private async Task VerifyArchiveAsync()
+    {
+        try
+        {
+            var result = await _verificationService.VerifyArchiveAsync(
+                ReportFilePath, null, null, null, CancellationToken.None);
+
+            var sb = new System.Text.StringBuilder();
+            foreach (var entry in result.Entries)
+            {
+                var tag = entry.Status switch
+                {
+                    Core.Models.FileVerificationStatus.Ok => "[OK]",
+                    Core.Models.FileVerificationStatus.Altered => "[ALTERADO]",
+                    Core.Models.FileVerificationStatus.Missing => "[FALTANTE]",
+                    Core.Models.FileVerificationStatus.Extra => "[AÑADIDO]",
+                    _ => "[?]"
+                };
+                sb.AppendLine($"{tag} {entry.EntryName}");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"Resumen: {result.OkCount} OK, {result.AlteredCount} alterados, " +
+                          $"{result.MissingCount} faltantes, {result.ExtraCount} añadidos.");
+            if (result.ZipHashMatches.HasValue)
+            {
+                sb.AppendLine($"Hash global del ZIP: {(result.ZipHashMatches.Value ? "coincide" : "NO coincide")}.");
+            }
+
+            if (result.Signature is { Present: true } sig)
+            {
+                sb.AppendLine($"Firma digital: {(sig.Valid ? "VÁLIDA" : "INVÁLIDA")}");
+                if (!string.IsNullOrEmpty(sig.SignerSubject))
+                {
+                    sb.AppendLine($"  Firmante: {sig.SignerSubject}");
+                }
+                if (sig.SignedAtUtc.HasValue)
+                {
+                    sb.AppendLine($"  Fecha de firma (UTC): {sig.SignedAtUtc.Value:yyyy-MM-ddTHH:mm:ssZ}");
+                }
+            }
+
+            DetailsText = sb.ToString();
+            Status = result.IsIntact ? VerificationStatus.Valid : VerificationStatus.Invalid;
+        }
+        catch (Exception ex)
+        {
+            Status = VerificationStatus.BadFormat;
+            DetailsText = $"Error al verificar la evidencia: {ex.Message}";
         }
     }
 }

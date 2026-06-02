@@ -36,6 +36,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IHashService _hashService;
     private readonly IPasswordService _passwordService;
     private readonly IReportService _reportService;
+    private readonly IVerificationService _verificationService;
+    private readonly ISignatureService _signatureService;
     private readonly IConfigService _configService;
     private readonly IThemeService _themeService;
     private readonly ILogService _logService;
@@ -66,6 +68,8 @@ public partial class MainWindowViewModel : ViewModelBase
         IHashService hashService,
         IPasswordService passwordService,
         IReportService reportService,
+        IVerificationService verificationService,
+        ISignatureService signatureService,
         IConfigService configService,
         ILocalizationService localization,
         IThemeService themeService,
@@ -76,6 +80,8 @@ public partial class MainWindowViewModel : ViewModelBase
         _hashService = hashService;
         _passwordService = passwordService;
         _reportService = reportService;
+        _verificationService = verificationService;
+        _signatureService = signatureService;
         _configService = configService;
         _themeService = themeService;
         _logService = logService;
@@ -118,7 +124,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NavigateToZip()
     {
-        _zipVm ??= new ZipViewModel(_zipService, _hashService, _passwordService, _reportService, _localization, _configService, _logService, _operatorDialog);
+        _zipVm ??= new ZipViewModel(_zipService, _hashService, _passwordService, _reportService, _signatureService, _localization, _configService, _logService, _operatorDialog);
         CurrentView = _zipVm;
         ActiveSection = "zip";
         _logService.Info("Navegando a: Comprimir");
@@ -145,7 +151,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NavigateToVerifyReport()
     {
-        _verifyVm ??= new VerifyReportViewModel(_reportService, _hashService, _localization);
+        _verifyVm ??= new VerifyReportViewModel(_reportService, _hashService, _verificationService, _localization);
         CurrentView = _verifyVm;
         ActiveSection = "verify";
         _logService.Info("Navegando a: Verificar");

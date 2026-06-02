@@ -27,7 +27,16 @@ namespace ForZip.Core.Models;
 
 public class HashResult
 {
+    /// <summary>Nombre de la entrada dentro del ZIP (ruta relativa, separador POSIX).</summary>
     public string FilePath { get; set; } = string.Empty;
+
     public long FileSize { get; set; }
+
+    /// <summary>Ruta absoluta original del archivo de origen (cadena de custodia).</summary>
+    public string? SourcePath { get; set; }
+
+    /// <summary>Fecha de última modificación del archivo de origen, en UTC.</summary>
+    public DateTimeOffset? ModifiedUtc { get; set; }
+
     public Dictionary<HashAlgorithmType, string> Hashes { get; set; } = new();
 }

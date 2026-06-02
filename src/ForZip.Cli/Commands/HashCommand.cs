@@ -26,6 +26,9 @@ public class HashCommand
         var input = parser.GetOption("-i", "--input");
         var algoStr = parser.GetOption("-a", "--algo") ?? "sha256";
         var reportFile = parser.GetOption("-r", "--report");
+        var operatorName = parser.GetOption("--operator", "--operator-name");
+        var lang = parser.GetOption("--lang", "--language") ?? _localization.CurrentLanguage;
+        var noSidecar = parser.HasOption("--no-sidecar", "--no-sidecar");
 
         if (string.IsNullOrEmpty(input))
         {
@@ -48,17 +51,15 @@ public class HashCommand
             return 1;
         }
 
-        Console.WriteLine($"Calculando hashes para {files.Count} archivos...");
-        var results = new List<HashResult>();
+        Console.WriteLine($"Calculando hashes para {files.Count} archivos (en paralelo)...");
 
-        foreach (var file in files)
+        // Cálculo en paralelo con concurrencia acotada; el orden de entrada se preserva
+        var results = await _hashService.ComputeHashesBatchAsync(files, algorithms, 0, CancellationToken.None);
+
+        for (int i = 0; i < files.Count; i++)
         {
-            Console.Write($"Procesando: {Path.GetFileName(file)}... ");
-            var result = await _hashService.ComputeHashesAsync(file, algorithms, null, CancellationToken.None);
-            results.Add(result);
-            Console.WriteLine("Listo.");
-            
-            foreach (var h in result.Hashes)
+            Console.WriteLine($"{Path.GetFileName(files[i])}:");
+            foreach (var h in results[i].Hashes)
             {
                 Console.WriteLine($"  {h.Key.ToString().PadRight(8)}: {h.Value}");
             }
@@ -68,15 +69,24 @@ public class HashCommand
         {
             var data = new ReportData
             {
-                Operator = new OperatorInfo { Name = "CLI Operator" },
+                Operator = string.IsNullOrWhiteSpace(operatorName) ? null : new OperatorInfo { Name = operatorName },
                 Operation = OperationType.HashBatch,
                 Algorithms = algorithms,
                 FileResults = results
             };
 
-            var content = _reportService.GenerateReport(data, "es");
+            var content = _reportService.GenerateReport(data, lang);
             await _reportService.SaveReportAsync(content, reportFile);
             Console.WriteLine($"\nInforme exportado a: {reportFile}");
+
+            if (!noSidecar)
+            {
+                var reportHash = await _hashService.ComputeHashesAsync(
+                    reportFile, new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 }, null, CancellationToken.None);
+                var sidecarPath = reportFile + ".sha256";
+                await File.WriteAllTextAsync(sidecarPath, $"{reportHash.Hashes[HashAlgorithmType.SHA256]}  {Path.GetFileName(reportFile)}");
+                Console.WriteLine($"Archivo de integridad generado: {sidecarPath}");
+            }
         }
 
         return 0;

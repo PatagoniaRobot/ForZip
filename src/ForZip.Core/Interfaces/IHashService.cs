@@ -35,5 +35,24 @@ public interface IHashService
         IProgress<double>? progress,
         CancellationToken ct);
 
+    /// <summary>
+    /// Calcula los hashes solicitados sobre un stream arbitrario (por ejemplo, una
+    /// entrada dentro de un ZIP). Devuelve los hashes en hexadecimal minúsculas.
+    /// </summary>
+    Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
+        Stream stream,
+        HashSet<HashAlgorithmType> algorithms,
+        CancellationToken ct);
+
+    /// <summary>
+    /// Calcula hashes de varios archivos en paralelo (con concurrencia acotada),
+    /// preservando el orden de entrada en la lista de resultados.
+    /// </summary>
+    Task<List<HashResult>> ComputeHashesBatchAsync(
+        IReadOnlyList<string> filePaths,
+        HashSet<HashAlgorithmType> algorithms,
+        int maxDegreeOfParallelism,
+        CancellationToken ct);
+
     string ComputeSha256(string text);
 }

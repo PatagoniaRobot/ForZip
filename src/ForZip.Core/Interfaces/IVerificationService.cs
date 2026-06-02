@@ -23,21 +23,27 @@
 //
 // =============================================================================
 
-namespace ForZip.Core.Models;
+using ForZip.Core.Models;
 
-public class ReportData
+namespace ForZip.Core.Interfaces;
+
+public interface IVerificationService
 {
-    public OperatorInfo? Operator { get; set; }
-    public string? CaseNumber { get; set; }
-    public string? CaseDescription { get; set; }
-    public string? Court { get; set; }
-    public OperationType Operation { get; set; }
-    public int CompressionLevel { get; set; }
-    public bool HasPassword { get; set; }
-    public HashSet<HashAlgorithmType> Algorithms { get; set; } = new();
-    public string? ZipFilePath { get; set; }
-    public long? ZipFileSize { get; set; }
-    public string? ZipHash { get; set; }
-    public List<HashResult> FileResults { get; set; } = new();
-    public string ForZipVersion { get; set; } = "v1.1.0";
+    /// <summary>Deserializa un manifiesto forense desde su contenido JSON.</summary>
+    ForensicManifest ParseManifest(string json);
+
+    /// <summary>
+    /// Re-hashea el contenido de un ZIP y lo contrasta contra el manifiesto forense,
+    /// produciendo un veredicto archivo por archivo (OK / alterado / faltante / añadido)
+    /// y, si está disponible, la verificación del hash global del ZIP.
+    /// </summary>
+    /// <param name="manifestPath">Ruta al archivo .manifest.json.</param>
+    /// <param name="zipPathOverride">Ruta al ZIP; si es nula, se resuelve junto al manifiesto.</param>
+    /// <param name="password">Contraseña del ZIP, si está cifrado.</param>
+    Task<ArchiveVerificationResult> VerifyArchiveAsync(
+        string manifestPath,
+        string? zipPathOverride,
+        string? password,
+        IProgress<(long bytesProcessed, long totalBytes)>? progress,
+        CancellationToken ct);
 }

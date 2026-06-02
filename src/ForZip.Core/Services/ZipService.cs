@@ -23,6 +23,7 @@
 //
 // =============================================================================
 
+using System.Security.Cryptography;
 using ForZip.Core.Interfaces;
 using ForZip.Core.Models;
 using ICSharpCode.SharpZipLib.Zip;
@@ -34,11 +35,12 @@ public class ZipService : IZipService
     private const int BufferSize = 65536;
     private static readonly int[] ValidLevels = { 0, 1, 3, 5, 7, 9 };
 
-    private readonly IHashService _hashService;
-
     public ZipService(IHashService hashService)
     {
-        _hashService = hashService;
+        // El hashing se realiza ahora en un único pase durante el empaquetado, por lo
+        // que ZipService ya no necesita IHashService. Se conserva el parámetro por
+        // compatibilidad con la composición de dependencias existente (DI y tests).
+        _ = hashService;
     }
 
     public async Task<List<HashResult>> CompressAsync(
@@ -49,41 +51,16 @@ public class ZipService : IZipService
         ValidateCompressOptions(options);
 
         var files = EnumerateSourceFiles(options.SourcePaths);
+        var emptyDirs = EnumerateEmptyDirectories(options.SourcePaths);
         var totalBytes = files.Sum(f => f.Size);
         var hashResults = new List<HashResult>();
 
-        // El trabajo total es Hashing (totalBytes) + Empaquetado (totalBytes)
+        // Un único pase: leemos cada archivo una sola vez y, con el mismo buffer,
+        // alimentamos los algoritmos de hash y el stream de compresión. Esto evita
+        // releer la evidencia (antes se leía dos veces) y reduce a la mitad el I/O.
         var hasHashing = options.HashAlgorithms.Count > 0;
-        var totalWork = hasHashing ? totalBytes * 2 : totalBytes;
 
-        // Fase 1: Hashing
-        if (hasHashing)
-        {
-            long hashedBytes = 0;
-            foreach (var file in files)
-            {
-                ct.ThrowIfCancellationRequested();
-                
-                var result = await _hashService.ComputeHashesAsync(
-                    file.FullPath, 
-                    options.HashAlgorithms, 
-                    new Progress<double>(p => {
-                        long currentHashed = hashedBytes + (long)(p * file.Size);
-                        progress?.Report((currentHashed, totalWork));
-                    }), 
-                    ct);
-                
-                hashedBytes += file.Size;
-                result.FilePath = file.EntryName;
-                hashResults.Add(result);
-                progress?.Report((hashedBytes, totalWork));
-            }
-        }
-
-        // Fase 2: Empaquetado
         long packedBytes = 0;
-        long baseOffset = hasHashing ? totalBytes : 0;
-
         bool success = false;
         var hasPassword = !string.IsNullOrEmpty(options.Password);
 
@@ -103,31 +80,81 @@ public class ZipService : IZipService
                 zipStream.Password = options.Password;
             }
 
+            // Entradas de directorio para preservar carpetas vacías (estructura fiel)
+            foreach (var dirEntryName in emptyDirs)
+            {
+                ct.ThrowIfCancellationRequested();
+                zipStream.PutNextEntry(new ZipEntry(dirEntryName));
+                zipStream.CloseEntry();
+            }
+
             var buffer = new byte[BufferSize];
             foreach (var file in files)
             {
                 ct.ThrowIfCancellationRequested();
 
+                // Timestamp en UTC para que el ZIP sea reproducible con independencia
+                // de la zona horaria de la máquina que lo genera.
                 var entry = new ZipEntry(file.EntryName)
                 {
-                    DateTime = File.GetLastWriteTime(file.FullPath),
+                    DateTime = file.ModifiedUtc.UtcDateTime,
                     Size = file.Size,
                     AESKeySize = hasPassword ? 256 : 0
                 };
 
                 zipStream.PutNextEntry(entry);
 
-                await using (var inFs = new FileStream(
-                    file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read,
-                    BufferSize, useAsync: true))
+                var hashers = hasHashing ? CreateHashers(options.HashAlgorithms) : null;
+                try
                 {
-                    int n;
-                    while ((n = await inFs.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+                    await using (var inFs = new FileStream(
+                        file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                        BufferSize, useAsync: true))
                     {
-                        ct.ThrowIfCancellationRequested();
-                        await zipStream.WriteAsync(buffer.AsMemory(0, n), ct);
-                        packedBytes += n;
-                        progress?.Report((baseOffset + packedBytes, totalWork));
+                        int n;
+                        while ((n = await inFs.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+                        {
+                            ct.ThrowIfCancellationRequested();
+
+                            if (hashers != null)
+                            {
+                                foreach (var hasher in hashers.Values)
+                                {
+                                    hasher.TransformBlock(buffer, 0, n, null, 0);
+                                }
+                            }
+
+                            await zipStream.WriteAsync(buffer.AsMemory(0, n), ct);
+                            packedBytes += n;
+                            progress?.Report((packedBytes, totalBytes));
+                        }
+                    }
+
+                    if (hashers != null)
+                    {
+                        var result = new HashResult
+                        {
+                            FilePath = file.EntryName,
+                            FileSize = file.Size,
+                            SourcePath = file.FullPath,
+                            ModifiedUtc = file.ModifiedUtc
+                        };
+                        foreach (var (algo, hasher) in hashers)
+                        {
+                            hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                            result.Hashes[algo] = Convert.ToHexString(hasher.Hash!).ToLowerInvariant();
+                        }
+                        hashResults.Add(result);
+                    }
+                }
+                finally
+                {
+                    if (hashers != null)
+                    {
+                        foreach (var hasher in hashers.Values)
+                        {
+                            hasher.Dispose();
+                        }
                     }
                 }
 
@@ -222,10 +249,6 @@ public class ZipService : IZipService
             foreach (ZipEntry entry in zipFile)
             {
                 ct.ThrowIfCancellationRequested();
-                if (!entry.IsFile)
-                {
-                    continue;
-                }
 
                 var combined = Path.Combine(outputDir, entry.Name);
                 var targetPath = Path.GetFullPath(combined);
@@ -236,6 +259,18 @@ public class ZipService : IZipService
                 {
                     throw new InvalidOperationException(
                         $"Entrada ZIP fuera del directorio destino (Zip Slip): {entry.Name}");
+                }
+
+                // Entrada de directorio (incl. carpetas vacías): recrearla y continuar
+                if (entry.IsDirectory)
+                {
+                    Directory.CreateDirectory(targetPath);
+                    continue;
+                }
+
+                if (!entry.IsFile)
+                {
+                    continue;
                 }
 
                 var targetDir = Path.GetDirectoryName(targetPath);
@@ -251,7 +286,7 @@ public class ZipService : IZipService
                 {
                     createdFiles.Add(targetPath);
                     int n;
-                    while ((n = inStream.Read(buffer, 0, buffer.Length)) > 0)
+                    while ((n = await inStream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
                     {
                         ct.ThrowIfCancellationRequested();
                         await outStream.WriteAsync(buffer.AsMemory(0, n), ct);
@@ -298,6 +333,24 @@ public class ZipService : IZipService
         }
     }
 
+    private static Dictionary<HashAlgorithmType, HashAlgorithm> CreateHashers(
+        IEnumerable<HashAlgorithmType> algorithms)
+    {
+        var hashers = new Dictionary<HashAlgorithmType, HashAlgorithm>();
+        foreach (var algo in algorithms)
+        {
+            hashers[algo] = algo switch
+            {
+                HashAlgorithmType.MD5 => MD5.Create(),
+                HashAlgorithmType.SHA1 => SHA1.Create(),
+                HashAlgorithmType.SHA256 => SHA256.Create(),
+                HashAlgorithmType.SHA512 => SHA512.Create(),
+                _ => throw new ArgumentOutOfRangeException(nameof(algorithms), algo, "Algoritmo no soportado.")
+            };
+        }
+        return hashers;
+    }
+
     private static List<SourceFile> EnumerateSourceFiles(IEnumerable<string> sourcePaths)
     {
         var files = new List<SourceFile>();
@@ -307,7 +360,7 @@ public class ZipService : IZipService
             if (File.Exists(src))
             {
                 var fi = new FileInfo(src);
-                files.Add(new SourceFile(fi.FullName, fi.Name, fi.Length));
+                files.Add(new SourceFile(fi.FullName, fi.Name, fi.Length, fi.LastWriteTimeUtc));
             }
             else if (Directory.Exists(src))
             {
@@ -318,7 +371,7 @@ public class ZipService : IZipService
                     // ZIP exige separador POSIX en los nombres de entrada
                     var entryName = Path.Combine(baseName, rel).Replace('\\', '/');
                     var fi = new FileInfo(file);
-                    files.Add(new SourceFile(fi.FullName, entryName, fi.Length));
+                    files.Add(new SourceFile(fi.FullName, entryName, fi.Length, fi.LastWriteTimeUtc));
                 }
             }
             else
@@ -330,5 +383,46 @@ public class ZipService : IZipService
         return files;
     }
 
-    private sealed record SourceFile(string FullPath, string EntryName, long Size);
+    /// <summary>
+    /// Devuelve los nombres de entrada (separador POSIX, con barra final) de las
+    /// carpetas que no contienen ningún archivo en todo su subárbol. Sin esto, una
+    /// carpeta vacía del origen se perdería al empaquetar.
+    /// </summary>
+    private static List<string> EnumerateEmptyDirectories(IEnumerable<string> sourcePaths)
+    {
+        var dirs = new List<string>();
+
+        foreach (var src in sourcePaths)
+        {
+            if (!Directory.Exists(src))
+            {
+                continue;
+            }
+
+            var baseName = Path.GetFileName(Path.TrimEndingDirectorySeparator(src));
+
+            // La propia raíz, si está totalmente vacía
+            if (!Directory.EnumerateFileSystemEntries(src).Any())
+            {
+                dirs.Add(baseName.Replace('\\', '/') + "/");
+                continue;
+            }
+
+            foreach (var dir in Directory.EnumerateDirectories(src, "*", SearchOption.AllDirectories))
+            {
+                if (Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories).Any())
+                {
+                    continue; // las entradas de archivo ya recrean esta carpeta
+                }
+
+                var rel = Path.GetRelativePath(src, dir);
+                var entryName = Path.Combine(baseName, rel).Replace('\\', '/');
+                dirs.Add(entryName + "/");
+            }
+        }
+
+        return dirs;
+    }
+
+    private sealed record SourceFile(string FullPath, string EntryName, long Size, DateTimeOffset ModifiedUtc);
 }

@@ -23,21 +23,29 @@
 //
 // =============================================================================
 
-namespace ForZip.Core.Models;
+using ForZip.Core.Models;
 
-public class ReportData
+namespace ForZip.Core.Interfaces;
+
+/// <summary>
+/// Firma y verifica manifiestos forenses con una firma CMS/PKCS#7 desacoplada
+/// (archivo <c>.p7s</c> junto al manifiesto), usando un certificado X.509 del operador.
+/// </summary>
+public interface ISignatureService
 {
-    public OperatorInfo? Operator { get; set; }
-    public string? CaseNumber { get; set; }
-    public string? CaseDescription { get; set; }
-    public string? Court { get; set; }
-    public OperationType Operation { get; set; }
-    public int CompressionLevel { get; set; }
-    public bool HasPassword { get; set; }
-    public HashSet<HashAlgorithmType> Algorithms { get; set; } = new();
-    public string? ZipFilePath { get; set; }
-    public long? ZipFileSize { get; set; }
-    public string? ZipHash { get; set; }
-    public List<HashResult> FileResults { get; set; } = new();
-    public string ForZipVersion { get; set; } = "v1.1.0";
+    /// <summary>Indica si existe un archivo de firma (.p7s) junto al manifiesto.</summary>
+    bool IsSignaturePresent(string manifestPath);
+
+    /// <summary>
+    /// Firma el manifiesto con el certificado del archivo PFX/PKCS#12 indicado y
+    /// escribe la firma desacoplada en <c>&lt;manifiesto&gt;.p7s</c>.
+    /// </summary>
+    Task SignAsync(string manifestPath, string pfxPath, string? pfxPassword, CancellationToken ct);
+
+    /// <summary>
+    /// Verifica la firma del manifiesto (si existe). La validez confirma que el
+    /// manifiesto no cambió desde la firma; la confianza en la identidad del firmante
+    /// depende de validar su certificado por fuera (no se valida la cadena a una CA).
+    /// </summary>
+    SignatureInfo Verify(string manifestPath);
 }

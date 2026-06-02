@@ -47,18 +47,24 @@ public partial class App : Application
         {
             // Composition root: instanciamos servicios con sus dependencias resueltas a mano
             var localization = new LocalizationService();
-            var logService = new LogService();
+            var logService = new LogService
+            {
+                // Marshalar las mutaciones de la colección al hilo de UI de Avalonia
+                UiDispatcher = action => Avalonia.Threading.Dispatcher.UIThread.Post(action)
+            };
             var hashService = new HashService();
             var passwordService = new PasswordService();
             var zipService = new ZipService(hashService);
             var reportService = new ReportService(localization);
+            var signatureService = new SignatureService();
+            var verificationService = new VerificationService(hashService, signatureService);
             var configService = new ConfigService();
             var themeService = new ThemeService();
             var operatorDialog = new OperatorDialogService();
 
             var mainViewModel = new MainWindowViewModel(
                 zipService, hashService, passwordService,
-                reportService, configService, localization, themeService,
+                reportService, verificationService, signatureService, configService, localization, themeService,
                 logService, operatorDialog);
 
             UpdateResources(localization);
