@@ -36,6 +36,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IHashService _hashService;
     private readonly IPasswordService _passwordService;
     private readonly IReportService _reportService;
+    private readonly IVerificationService _verificationService;
     private readonly IConfigService _configService;
     private readonly IThemeService _themeService;
     private readonly ILogService _logService;
@@ -66,6 +67,7 @@ public partial class MainWindowViewModel : ViewModelBase
         IHashService hashService,
         IPasswordService passwordService,
         IReportService reportService,
+        IVerificationService verificationService,
         IConfigService configService,
         ILocalizationService localization,
         IThemeService themeService,
@@ -76,6 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _hashService = hashService;
         _passwordService = passwordService;
         _reportService = reportService;
+        _verificationService = verificationService;
         _configService = configService;
         _themeService = themeService;
         _logService = logService;
@@ -145,7 +148,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NavigateToVerifyReport()
     {
-        _verifyVm ??= new VerifyReportViewModel(_reportService, _hashService, _localization);
+        _verifyVm ??= new VerifyReportViewModel(_reportService, _hashService, _verificationService, _localization);
         CurrentView = _verifyVm;
         ActiveSection = "verify";
         _logService.Info("Navegando a: Verificar");

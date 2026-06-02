@@ -27,32 +27,23 @@ using ForZip.Core.Models;
 
 namespace ForZip.Core.Interfaces;
 
-public interface IHashService
+public interface IVerificationService
 {
-    Task<HashResult> ComputeHashesAsync(
-        string filePath,
-        HashSet<HashAlgorithmType> algorithms,
-        IProgress<double>? progress,
-        CancellationToken ct);
+    /// <summary>Deserializa un manifiesto forense desde su contenido JSON.</summary>
+    ForensicManifest ParseManifest(string json);
 
     /// <summary>
-    /// Calcula los hashes solicitados sobre un stream arbitrario (por ejemplo, una
-    /// entrada dentro de un ZIP). Devuelve los hashes en hexadecimal minúsculas.
+    /// Re-hashea el contenido de un ZIP y lo contrasta contra el manifiesto forense,
+    /// produciendo un veredicto archivo por archivo (OK / alterado / faltante / añadido)
+    /// y, si está disponible, la verificación del hash global del ZIP.
     /// </summary>
-    Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
-        Stream stream,
-        HashSet<HashAlgorithmType> algorithms,
+    /// <param name="manifestPath">Ruta al archivo .manifest.json.</param>
+    /// <param name="zipPathOverride">Ruta al ZIP; si es nula, se resuelve junto al manifiesto.</param>
+    /// <param name="password">Contraseña del ZIP, si está cifrado.</param>
+    Task<ArchiveVerificationResult> VerifyArchiveAsync(
+        string manifestPath,
+        string? zipPathOverride,
+        string? password,
+        IProgress<(long bytesProcessed, long totalBytes)>? progress,
         CancellationToken ct);
-
-    /// <summary>
-    /// Calcula hashes de varios archivos en paralelo (con concurrencia acotada),
-    /// preservando el orden de entrada en la lista de resultados.
-    /// </summary>
-    Task<List<HashResult>> ComputeHashesBatchAsync(
-        IReadOnlyList<string> filePaths,
-        HashSet<HashAlgorithmType> algorithms,
-        int maxDegreeOfParallelism,
-        CancellationToken ct);
-
-    string ComputeSha256(string text);
 }

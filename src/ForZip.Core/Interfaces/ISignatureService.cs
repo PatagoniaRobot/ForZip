@@ -27,32 +27,25 @@ using ForZip.Core.Models;
 
 namespace ForZip.Core.Interfaces;
 
-public interface IHashService
+/// <summary>
+/// Firma y verifica manifiestos forenses con una firma CMS/PKCS#7 desacoplada
+/// (archivo <c>.p7s</c> junto al manifiesto), usando un certificado X.509 del operador.
+/// </summary>
+public interface ISignatureService
 {
-    Task<HashResult> ComputeHashesAsync(
-        string filePath,
-        HashSet<HashAlgorithmType> algorithms,
-        IProgress<double>? progress,
-        CancellationToken ct);
+    /// <summary>Indica si existe un archivo de firma (.p7s) junto al manifiesto.</summary>
+    bool IsSignaturePresent(string manifestPath);
 
     /// <summary>
-    /// Calcula los hashes solicitados sobre un stream arbitrario (por ejemplo, una
-    /// entrada dentro de un ZIP). Devuelve los hashes en hexadecimal minúsculas.
+    /// Firma el manifiesto con el certificado del archivo PFX/PKCS#12 indicado y
+    /// escribe la firma desacoplada en <c>&lt;manifiesto&gt;.p7s</c>.
     /// </summary>
-    Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
-        Stream stream,
-        HashSet<HashAlgorithmType> algorithms,
-        CancellationToken ct);
+    Task SignAsync(string manifestPath, string pfxPath, string? pfxPassword, CancellationToken ct);
 
     /// <summary>
-    /// Calcula hashes de varios archivos en paralelo (con concurrencia acotada),
-    /// preservando el orden de entrada en la lista de resultados.
+    /// Verifica la firma del manifiesto (si existe). La validez confirma que el
+    /// manifiesto no cambió desde la firma; la confianza en la identidad del firmante
+    /// depende de validar su certificado por fuera (no se valida la cadena a una CA).
     /// </summary>
-    Task<List<HashResult>> ComputeHashesBatchAsync(
-        IReadOnlyList<string> filePaths,
-        HashSet<HashAlgorithmType> algorithms,
-        int maxDegreeOfParallelism,
-        CancellationToken ct);
-
-    string ComputeSha256(string text);
+    SignatureInfo Verify(string manifestPath);
 }

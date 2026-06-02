@@ -26,7 +26,8 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using ForZip.Core.Interfaces;
 using ForZip.Core.Models;
 
@@ -41,7 +42,15 @@ public class ReportService : IReportService
     private const int FileColumnWidth = 41;
     private const int SizeColumnWidth = 13;
 
-    private static readonly byte[] Utf8Bom = new byte[] { 0xEF, 0xBB, 0xBF };
+    // Sufijo del archivo de hash externo que acompaña al informe (cadena de integridad)
+    private const string Sha256Suffix = ".sha256";
+
+    private static readonly JsonSerializerOptions ManifestJsonOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     private static readonly HashAlgorithmType[] AlgorithmDisplayOrder =
     {
@@ -82,8 +91,91 @@ public class ReportService : IReportService
 
     public (bool isValid, string details) VerifyReport(string reportPath)
     {
-        // La auto-verificación interna ha sido deshabilitada a favor de hashes externos (.sha256)
-        return (false, "La verificación interna ha sido deshabilitada. Utilice archivos .sha256 para verificar la integridad.");
+        if (!File.Exists(reportPath))
+        {
+            return (false, _localization.Get("verify_report_not_found"));
+        }
+
+        var sidecarPath = reportPath + Sha256Suffix;
+        if (!File.Exists(sidecarPath))
+        {
+            return (false, _localization.Get("verify_no_sidecar"));
+        }
+
+        string sidecarContent;
+        try
+        {
+            sidecarContent = File.ReadAllText(sidecarPath);
+        }
+        catch (IOException ex)
+        {
+            return (false, $"{_localization.Get("verify_sidecar_read_error")} {ex.Message}");
+        }
+
+        var expected = ExtractSha256(sidecarContent);
+        if (expected == null)
+        {
+            return (false, _localization.Get("verify_sidecar_bad_format"));
+        }
+
+        var actual = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(reportPath))).ToLowerInvariant();
+
+        if (string.Equals(expected, actual, StringComparison.Ordinal))
+        {
+            return (true, _localization.Get("verify_valid"));
+        }
+
+        var template = _localization.Get("verify_hash_mismatch");
+        return (false, string.Format(CultureInfo.InvariantCulture, template, expected, actual));
+    }
+
+    public string GenerateManifestJson(ReportData data)
+    {
+        var manifest = new ForensicManifest
+        {
+            ForZipVersion = data.ForZipVersion,
+            GeneratedAtUtc = DateTimeOffset.UtcNow,
+            Operator = data.Operator,
+            CaseNumber = data.CaseNumber,
+            CaseDescription = data.CaseDescription,
+            Court = data.Court,
+            Operation = data.Operation,
+            CompressionLevel = data.CompressionLevel,
+            HasPassword = data.HasPassword,
+            Algorithms = AlgorithmDisplayOrder.Where(data.Algorithms.Contains).ToList(),
+            ZipFileName = data.ZipFilePath != null ? Path.GetFileName(data.ZipFilePath) : null,
+            ZipFileSize = data.ZipFileSize,
+            ZipSha256 = data.ZipHash,
+            Files = data.FileResults.Select(f => new ManifestFileEntry
+            {
+                EntryName = f.FilePath,
+                SourcePath = f.SourcePath,
+                Size = f.FileSize,
+                ModifiedUtc = f.ModifiedUtc,
+                Hashes = new Dictionary<HashAlgorithmType, string>(f.Hashes)
+            }).ToList()
+        };
+
+        return JsonSerializer.Serialize(manifest, ManifestJsonOptions);
+    }
+
+    /// <summary>Extrae el primer hash SHA-256 (64 hex) que aparezca en el texto, en minúsculas.</summary>
+    private static string? ExtractSha256(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        foreach (var token in content.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (token.Length == 64 && token.All(Uri.IsHexDigit))
+            {
+                return token.ToLowerInvariant();
+            }
+        }
+
+        return null;
     }
 
     private string BuildReport(ReportData data, string language)
@@ -97,6 +189,7 @@ public class ReportService : IReportService
         AppendEnvironmentSection(sb, data);
         AppendOperationParametersSection(sb, data);
         AppendFilesSection(sb, data, culture);
+        AppendFileMetadataSection(sb, data);
 
         if (data.Operation == OperationType.Compression && data.ZipFilePath != null)
         {
@@ -302,6 +395,40 @@ public class ReportService : IReportService
         }
     }
 
+    private void AppendFileMetadataSection(StringBuilder sb, ReportData data)
+    {
+        // Solo si hay metadatos de cadena de custodia que documentar
+        var hasMetadata = data.FileResults.Any(
+            f => !string.IsNullOrEmpty(f.SourcePath) || f.ModifiedUtc.HasValue);
+        if (!hasMetadata)
+        {
+            return;
+        }
+
+        sb.Append(_localization.Get("report_sources")).Append(NewLine);
+
+        for (int i = 0; i < data.FileResults.Count; i++)
+        {
+            var file = data.FileResults[i];
+            sb.Append("  [").Append((i + 1).ToString(CultureInfo.InvariantCulture)).Append("] ")
+              .Append(file.FilePath).Append(NewLine);
+
+            if (!string.IsNullOrEmpty(file.SourcePath))
+            {
+                AppendField(sb, "  " + _localization.Get("report_src_origin"), file.SourcePath!);
+            }
+
+            if (file.ModifiedUtc.HasValue)
+            {
+                var modified = file.ModifiedUtc.Value.ToUniversalTime()
+                    .ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+                AppendField(sb, "  " + _localization.Get("report_src_modified"), modified);
+            }
+        }
+
+        sb.Append(NewLine);
+    }
+
     private void AppendZipHashSection(StringBuilder sb, ReportData data, CultureInfo culture)
     {
         sb.Append(_localization.Get("report_zip_hash")).Append(NewLine);
@@ -391,25 +518,5 @@ public class ReportService : IReportService
             HashAlgorithmType.SHA512 => 128,
             _ => 64
         };
-    }
-
-    private static int LastIndexOfCrlf(byte[] bytes)
-    {
-        for (int i = bytes.Length - 2; i >= 0; i--)
-        {
-            if (bytes[i] == 0x0D && bytes[i + 1] == 0x0A)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static byte[] Concat(byte[] a, byte[] b)
-    {
-        var result = new byte[a.Length + b.Length];
-        Buffer.BlockCopy(a, 0, result, 0, a.Length);
-        Buffer.BlockCopy(b, 0, result, a.Length, b.Length);
-        return result;
     }
 }

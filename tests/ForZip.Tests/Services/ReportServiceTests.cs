@@ -75,41 +75,68 @@ public class ReportServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task VerifyReport_ReturnsDisabled()
+    public async Task VerifyReport_WithMatchingSidecar_ReturnsValid()
     {
         var data = BuildFullReportData();
         var report = _service.GenerateReport(data, "es");
         var path = Path.Combine(_workDir, "report.txt");
-
         await _service.SaveReportAsync(report, path);
-        var (isValid, details) = _service.VerifyReport(path);
+        await WriteSidecarAsync(path);
 
-        Assert.False(isValid);
-        Assert.Contains("deshabilitada", details);
+        var (isValid, _) = _service.VerifyReport(path);
+
+        Assert.True(isValid);
     }
 
     [Fact]
-    public async Task VerifyReport_AnyFile_ReturnsDisabled()
+    public async Task VerifyReport_WithoutSidecar_ReturnsInvalid()
     {
-        var path = Path.Combine(_workDir, "any_file.txt");
-        await File.WriteAllTextAsync(path, "contenido cualquiera", Encoding.UTF8);
+        var data = BuildFullReportData();
+        var report = _service.GenerateReport(data, "es");
+        var path = Path.Combine(_workDir, "report.txt");
+        await _service.SaveReportAsync(report, path);
 
-        var (isValid, details) = _service.VerifyReport(path);
+        var (isValid, _) = _service.VerifyReport(path);
 
         Assert.False(isValid);
-        Assert.Contains("deshabilitada", details);
     }
 
     [Fact]
-    public async Task VerifyReport_BadFormat_ReturnsDisabled()
+    public async Task VerifyReport_TamperedReport_ReturnsInvalid()
     {
-        var path = Path.Combine(_workDir, "bad.txt");
-        await File.WriteAllTextAsync(path, "este archivo no es un informe ForZip", Encoding.UTF8);
+        var data = BuildFullReportData();
+        var report = _service.GenerateReport(data, "es");
+        var path = Path.Combine(_workDir, "report.txt");
+        await _service.SaveReportAsync(report, path);
+        await WriteSidecarAsync(path);
 
-        var (isValid, details) = _service.VerifyReport(path);
+        // Alterar el informe después de generar el sidecar
+        await File.AppendAllTextAsync(path, "modificación maliciosa");
+
+        var (isValid, _) = _service.VerifyReport(path);
 
         Assert.False(isValid);
-        Assert.Contains("deshabilitada", details);
+    }
+
+    [Fact]
+    public void GenerateManifestJson_RoundTrips_AllFiles()
+    {
+        var data = BuildFullReportData();
+
+        var json = _service.GenerateManifestJson(data);
+
+        Assert.Contains("\"FormatVersion\"", json);
+        Assert.Contains("contrato_2024.pdf", json);
+        // Los algoritmos se serializan por nombre, no por número
+        Assert.Contains("SHA256", json);
+    }
+
+    private static async Task WriteSidecarAsync(string reportPath)
+    {
+        var hash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(await File.ReadAllBytesAsync(reportPath)))
+            .ToLowerInvariant();
+        await File.WriteAllTextAsync(reportPath + ".sha256", $"{hash}  {Path.GetFileName(reportPath)}");
     }
 
     [Fact]

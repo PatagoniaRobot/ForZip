@@ -30,6 +30,18 @@ namespace ForZip.Core.Interfaces;
 public interface IReportService
 {
     string GenerateReport(ReportData data, string language);
+
+    /// <summary>
+    /// Genera el manifiesto forense en formato JSON (legible por máquina), fuente de
+    /// verdad para la verificación automática de la evidencia.
+    /// </summary>
+    string GenerateManifestJson(ReportData data);
+
     Task SaveReportAsync(string content, string outputPath);
+
+    /// <summary>
+    /// Verifica la integridad de un informe contrastando su contenido con el hash
+    /// SHA-256 almacenado en el archivo externo <c>&lt;informe&gt;.sha256</c>.
+    /// </summary>
     (bool isValid, string details) VerifyReport(string reportPath);
 }

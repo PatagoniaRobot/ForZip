@@ -442,6 +442,11 @@ public partial class ZipViewModel : ViewModelBase
         var reportPath = Path.ChangeExtension(options.OutputPath, ".report.txt");
         await _reportService.SaveReportAsync(content, reportPath);
 
+        // Manifiesto JSON (fuente de verdad legible por máquina para verificación automática)
+        var manifestPath = options.OutputPath + ".manifest.json";
+        await File.WriteAllTextAsync(manifestPath, _reportService.GenerateManifestJson(data));
+        _logService.Info($"Manifiesto forense generado: {Path.GetFileName(manifestPath)}");
+
         if (result.GenerateExternalHash)
         {
             var reportHashResult = await _hashService.ComputeHashesAsync(

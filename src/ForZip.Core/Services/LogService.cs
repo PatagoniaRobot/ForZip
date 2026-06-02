@@ -31,16 +31,28 @@ namespace ForZip.Core.Services;
 public class LogService : ILogService
 {
     private const string LogDirectory = "Logs";
+
+    // Rotación: al superar este tamaño, el .log actual se archiva con marca temporal
+    private const long MaxLogFileBytes = 5 * 1024 * 1024;
+
     private readonly string _logFilePath;
+    private readonly object _fileLock = new();
+
+    /// <summary>
+    /// Despachador opcional al hilo de UI. La GUI lo asigna con
+    /// <c>Dispatcher.UIThread.Post</c>; en CLI/tests queda nulo y se escribe directo.
+    /// Evita corromper el binding de Avalonia al loguear desde hilos de fondo.
+    /// </summary>
+    public Action<Action>? UiDispatcher { get; set; }
 
     public LogService()
     {
         Entries = new ObservableCollection<LogEntry>();
-        
+
         var baseDir = AppContext.BaseDirectory;
         var logDir = Path.Combine(baseDir, LogDirectory);
         Directory.CreateDirectory(logDir);
-        
+
         var fileName = $"ForZip_{DateTime.Now:yyyyMMdd}.log";
         _logFilePath = Path.Combine(logDir, fileName);
     }
@@ -50,18 +62,30 @@ public class LogService : ILogService
     public void Log(LogLevel level, string message)
     {
         var entry = new LogEntry(DateTime.Now, level, message);
-        
-        // Ejecutar en el hilo de UI si fuera necesario, pero ObservableCollection 
-        // suele requerir despacho manual en Avalonia si se actualiza desde hilos de fondo.
-        // Por ahora lo hacemos directo, el ViewModel se encargará si hace falta.
-        Entries.Add(entry);
-        
+
+        // Mutar la ObservableCollection en el hilo de UI cuando hay despachador
+        if (UiDispatcher != null)
+        {
+            UiDispatcher(() => Entries.Add(entry));
+        }
+        else
+        {
+            Entries.Add(entry);
+        }
+
         WriteToFile(entry);
     }
 
     public void Clear()
     {
-        Entries.Clear();
+        if (UiDispatcher != null)
+        {
+            UiDispatcher(() => Entries.Clear());
+        }
+        else
+        {
+            Entries.Clear();
+        }
     }
 
     private void WriteToFile(LogEntry entry)
@@ -69,11 +93,36 @@ public class LogService : ILogService
         try
         {
             var line = $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] [{entry.Level.ToString().ToUpper()}] {entry.Message}{Environment.NewLine}";
-            File.AppendAllText(_logFilePath, line);
+
+            // Una sola escritura serializada evita intercalado entre hilos
+            lock (_fileLock)
+            {
+                RotateIfNeeded();
+                File.AppendAllText(_logFilePath, line);
+            }
         }
         catch
         {
             // Fallo silencioso en escritura a archivo para no romper la app
+        }
+    }
+
+    private void RotateIfNeeded()
+    {
+        var info = new FileInfo(_logFilePath);
+        if (!info.Exists || info.Length < MaxLogFileBytes)
+        {
+            return;
+        }
+
+        var archived = $"{_logFilePath}.{DateTime.Now:HHmmss}.bak";
+        try
+        {
+            File.Move(_logFilePath, archived);
+        }
+        catch (IOException)
+        {
+            // Si no se puede rotar (archivo bloqueado), se sigue escribiendo en el actual
         }
     }
 }

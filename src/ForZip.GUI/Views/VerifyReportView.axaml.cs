@@ -40,13 +40,17 @@ public partial class VerifyReportView : UserControl
         AddHandler(DragDrop.DropEvent, OnDrop);
     }
 
+    // Acepta tanto informes (.txt) como manifiestos forenses (.json) para verificación de evidencia
+    private static bool IsSupported(string? path) =>
+        !string.IsNullOrEmpty(path) &&
+        (path!.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+         path.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+
     private void OnDragOver(object? sender, DragEventArgs e)
     {
         var first = e.Data.GetFiles()?.FirstOrDefault();
         var path = first?.TryGetLocalPath();
-        e.DragEffects = !string.IsNullOrEmpty(path) && path!.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)
-            ? DragDropEffects.Copy
-            : DragDropEffects.None;
+        e.DragEffects = IsSupported(path) ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
     private void OnDrop(object? sender, DragEventArgs e)
@@ -58,9 +62,9 @@ public partial class VerifyReportView : UserControl
 
         var first = e.Data.GetFiles()?.FirstOrDefault();
         var path = first?.TryGetLocalPath();
-        if (!string.IsNullOrEmpty(path) && path!.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+        if (IsSupported(path))
         {
-            vm.ReportFilePath = path;
+            vm.ReportFilePath = path!;
         }
     }
 
@@ -75,12 +79,12 @@ public partial class VerifyReportView : UserControl
         var picked = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            Title = "Seleccionar informe forense",
+            Title = "Seleccionar informe o manifiesto forense",
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Informe ForZip")
+                new FilePickerFileType("Informe o manifiesto ForZip")
                 {
-                    Patterns = new[] { "*.txt" }
+                    Patterns = new[] { "*.txt", "*.json" }
                 }
             }
         });
