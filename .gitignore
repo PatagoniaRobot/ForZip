@@ -8,3 +8,4 @@ Publish/
 Logs/
 config.json
 *.DotSettings.user
+.claude/
