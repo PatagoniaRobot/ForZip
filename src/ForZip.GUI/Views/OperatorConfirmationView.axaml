@@ -1,0 +1,146 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+        x:Class="ForZip.GUI.Views.OperatorConfirmationView"
+        x:DataType="vm:OperatorConfirmationViewModel"
+        Title="ForZip"
+        Icon="avares://ForZip/Assets/ForZip.ico"
+        Width="480" Height="620"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="Full"
+        CanResize="False"
+        Background="{DynamicResource BgSecondaryBrush}">
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24,24,24,16">
+    
+    <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,20">
+      <TextBlock Text="{DynamicResource confirm_operator_title}"
+                 FontSize="20" FontWeight="Bold"
+                 Foreground="{DynamicResource AccentBrush}"/>
+      <TextBlock Text="{DynamicResource confirm_operator_msg}"
+                 TextWrapping="Wrap"
+                 Foreground="{DynamicResource TextSecondaryBrush}"/>
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" Margin="0,0,0,16">
+      <Border Padding="0,0,16,0">
+        <StackPanel Spacing="16">
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_op_name}" 
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Name}" Watermark="Ej: Perito Juan Pérez"/>
+          </StackPanel>
+          
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_op_title}" 
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Title}" Watermark="Ej: Especialista en Informática Forense"/>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_op_org}" 
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Organization}" Watermark="Ej: Policía Científica"/>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_op_email}" 
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Email}" Watermark="ejemplo@email.com"/>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_op_phone}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Phone}" Watermark="+54 9 ..."/>
+          </StackPanel>
+
+          <Separator Background="{DynamicResource BorderBrush}" Margin="0,4"/>
+
+          <TextBlock Text="{DynamicResource report_case}"
+                     FontWeight="Bold"
+                     Foreground="{DynamicResource AccentBrush}"/>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_case_number}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding CaseNumber}" Watermark="Ej: 12345/2026"/>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource report_case_desc}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding CaseDescription}"/>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Text="{DynamicResource case_court_label}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <TextBox Text="{Binding Court}" Watermark="{DynamicResource case_court_hint}"/>
+          </StackPanel>
+
+          <Separator Background="{DynamicResource BorderBrush}" Margin="0,4"/>
+
+          <CheckBox Content="{DynamicResource generate_sidecar}"
+                    IsChecked="{Binding GenerateExternalHash}"
+                    Margin="0,8,0,0"/>
+
+          <CheckBox Content="{DynamicResource sign_manifest}"
+                    IsChecked="{Binding SignManifest}"/>
+
+          <StackPanel Spacing="6" IsVisible="{Binding SignManifest}">
+            <TextBlock Text="{DynamicResource cert_label}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontWeight="SemiBold"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Text="{Binding CertificatePath}"
+                       Watermark="{DynamicResource cert_path_placeholder}"/>
+              <Button Grid.Column="1" Content="..." Width="40" Margin="8,0,0,0" Click="OnBrowseCertClick"/>
+            </Grid>
+            <TextBox Text="{Binding CertificatePassword}"
+                     PasswordChar="●"
+                     Watermark="{DynamicResource cert_password_placeholder}"/>
+
+            <CheckBox Content="{DynamicResource timestamp_label}"
+                      IsChecked="{Binding RequestTimestamp}"
+                      Margin="0,4,0,0"/>
+            <StackPanel Spacing="4" IsVisible="{Binding RequestTimestamp}" Margin="24,0,0,0">
+              <TextBlock Text="{DynamicResource timestamp_hint}"
+                         TextWrapping="Wrap"
+                         FontSize="11"
+                         Foreground="{DynamicResource TextSecondaryBrush}"/>
+              <TextBox Text="{Binding TimestampUrl}"
+                       Watermark="http://timestamp.digicert.com"/>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+
+    <Border Grid.Row="2" 
+            BorderBrush="{DynamicResource BorderBrush}" 
+            BorderThickness="0,1,0,0" 
+            Padding="0,16,0,0">
+      <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+        <Button Content="{DynamicResource cancel}"
+                Width="100"
+                Click="OnCancelClick"/>
+        <Button Content="{DynamicResource confirm_generate}"
+                Padding="16,8"
+                Background="{DynamicResource AccentBrush}"
+                Foreground="White"
+                Command="{Binding ConfirmCommand}"
+                Click="OnConfirmClick"/>
+      </StackPanel>
+    </Border>
+    
+  </Grid>
+</Window>

@@ -1,0 +1,31 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Tema oscuro: paleta forense según 04_Mockups_UI.md -->
+  <Color x:Key="BgPrimaryColor">#1a1a2e</Color>
+  <Color x:Key="BgSecondaryColor">#0f172a</Color>
+  <Color x:Key="BgCardColor">#1e293b</Color>
+  <Color x:Key="BorderColor">#334155</Color>
+  <Color x:Key="TextPrimaryColor">#e2e8f0</Color>
+  <Color x:Key="TextSecondaryColor">#94a3b8</Color>
+  <Color x:Key="AccentColor">#10B981</Color>
+  <Color x:Key="AccentHoverColor">#059669</Color>
+  <Color x:Key="ErrorColor">#ef4444</Color>
+  <Color x:Key="WarningColor">#f59e0b</Color>
+  <Color x:Key="VioletColor">#818cf8</Color>
+  <Color x:Key="ProgressBgColor">#334155</Color>
+  <Color x:Key="ProgressFillColor">#10B981</Color>
+
+  <SolidColorBrush x:Key="BgPrimaryBrush" Color="{StaticResource BgPrimaryColor}"/>
+  <SolidColorBrush x:Key="BgSecondaryBrush" Color="{StaticResource BgSecondaryColor}"/>
+  <SolidColorBrush x:Key="BgCardBrush" Color="{StaticResource BgCardColor}"/>
+  <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+  <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
+  <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+  <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+  <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}"/>
+  <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+  <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+  <SolidColorBrush x:Key="VioletBrush" Color="{StaticResource VioletColor}"/>
+  <SolidColorBrush x:Key="ProgressBgBrush" Color="{StaticResource ProgressBgColor}"/>
+  <SolidColorBrush x:Key="ProgressFillBrush" Color="{StaticResource ProgressFillColor}"/>
+</ResourceDictionary>

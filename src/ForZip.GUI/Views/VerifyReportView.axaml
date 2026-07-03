@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+             x:Class="ForZip.GUI.Views.VerifyReportView"
+             x:DataType="vm:VerifyReportViewModel"
+             DragDrop.AllowDrop="True">
+
+  <ScrollViewer>
+    <StackPanel Spacing="12" Margin="4">
+
+      <TextBlock Text="VERIFICAR INFORME"
+                 FontSize="16" FontWeight="SemiBold"
+                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+      <Border BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="24"
+              MinHeight="100">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+          <TextBlock Text="Arrastrá un informe ForZip (.txt) aquí"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     HorizontalAlignment="Center"/>
+          <Button Content="Seleccionar informe..."
+                  Click="OnBrowseClick"
+                  HorizontalAlignment="Center"
+                  Margin="0,8,0,0"/>
+        </StackPanel>
+      </Border>
+
+      <DockPanel>
+        <Button DockPanel.Dock="Right"
+                Content="..."
+                Click="OnBrowseClick"
+                Width="40"
+                Margin="6,0,0,0"/>
+        <TextBlock DockPanel.Dock="Top"
+                   Text="Archivo de informe:"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
+                   Margin="0,0,0,4"/>
+        <TextBox Text="{Binding ReportFilePath}"/>
+      </DockPanel>
+
+      <Button Content="Verificar"
+              Command="{Binding VerifyCommand}"
+              Background="{DynamicResource AccentBrush}"
+              Foreground="White"
+              Padding="20,8"
+              HorizontalAlignment="Center"/>
+
+      <Border BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="20"
+              IsVisible="{Binding HasResult}"
+              Background="{DynamicResource BgCardBrush}">
+        <StackPanel Spacing="8" HorizontalAlignment="Center">
+          <TextBlock Text="✅  INFORME VERIFICADO"
+                     FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource AccentBrush}"
+                     HorizontalAlignment="Center"
+                     IsVisible="{Binding IsValid}"/>
+          <TextBlock Text="❌  INFORME NO VERIFICADO"
+                     FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource ErrorBrush}"
+                     HorizontalAlignment="Center"
+                     IsVisible="{Binding IsInvalid}"/>
+          <TextBlock Text="⚠  FORMATO INVÁLIDO"
+                     FontSize="20" FontWeight="Bold"
+                     Foreground="{DynamicResource WarningBrush}"
+                     HorizontalAlignment="Center"
+                     IsVisible="{Binding IsBadFormat}"/>
+          <TextBlock Text="{Binding DetailsText}"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     HorizontalAlignment="Center"
+                     TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

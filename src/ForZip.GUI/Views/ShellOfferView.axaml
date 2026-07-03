@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ForZip.GUI.Views.ShellOfferView"
+        Title="ForZip"
+        Icon="avares://ForZip/Assets/ForZip.ico"
+        Width="460"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="Full"
+        CanResize="False"
+        Background="{DynamicResource BgSecondaryBrush}">
+
+  <StackPanel Margin="24" Spacing="16">
+
+    <TextBlock Text="{DynamicResource shell_offer_title}"
+               FontSize="18" FontWeight="Bold"
+               Foreground="{DynamicResource AccentBrush}"
+               TextWrapping="Wrap"/>
+
+    <TextBlock Text="{DynamicResource shell_offer_msg}"
+               TextWrapping="Wrap"
+               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button Content="{DynamicResource shell_offer_decline}"
+              Padding="16,8"
+              Click="OnDeclineClick"/>
+      <Button Content="{DynamicResource shell_offer_accept}"
+              Padding="16,8"
+              Background="{DynamicResource AccentBrush}"
+              Foreground="White"
+              Click="OnAcceptClick"/>
+    </StackPanel>
+
+  </StackPanel>
+</Window>

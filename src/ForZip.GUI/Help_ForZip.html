@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ForZip - Help</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', Arial, sans-serif; background-color: #1a1a2e; color: #E2E8F0; line-height: 1.6; margin: 0; padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; position: relative; }
+        .lang-toggle { position: absolute; top: 0; right: 0; background: #16213e; border: 1px solid #334155; border-radius: 4px; padding: 5px; display: flex; gap: 5px; }
+        .lang-btn { font-family: 'Montserrat', Arial, sans-serif; background: transparent; color: #94A3B8; border: none; cursor: pointer; font-weight: 600; padding: 5px 10px; border-radius: 3px; font-size: 13px; }
+        .lang-btn.active { background: #10B981; color: #1a1a2e; }
+        .header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
+        .h-line1 { color: #10B981; font-size: 28px; letter-spacing: 2px; }
+        .h-line2 { color: #10B981; font-size: 22px; margin: 10px 0; }
+        .h-line3 { color: #94A3B8; font-size: 14px; }
+        .card { background-color: #16213e; border: 1px solid #334155; border-radius: 8px; padding: 30px; margin-bottom: 30px; }
+        h2 { color: #10B981; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px; font-weight: 600; font-size: 18px; }
+        p { margin: 0 0 12px 0; }
+        ul, ol { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+        strong { color: #00D4AA; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #10B981; }
+        .footer { text-align: center; color: #94A3B8; font-size: 12px; margin-top: 50px; padding-top: 20px; border-top: 1px solid #334155; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .note { background: #1a1a2e; border-left: 3px solid #F59E0B; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0; font-size: 14px; }
+        .note strong { color: #F59E0B; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lang-toggle">
+            <button class="lang-btn" id="btn-es" onclick="setLang('es')">ES</button>
+            <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+        </div>
+
+        <div class="header">
+            <div class="h-line1"><span style="font-weight:700">PATAGONIA</span> <span style="font-weight:400">ROBOT</span></div>
+            <div class="h-line2"><strong style="color:#10B981">For</strong><strong style="color:#10B981">Zip</strong></div>
+            <div class="h-line3">v0.9.0 Beta</div>
+        </div>
+
+        <!-- ==================== ESPAÑOL ==================== -->
+        <div id="content-es" class="content-section">
+            <div class="card">
+                <h2>Descripción</h2>
+                <p><strong>ForZip</strong> es una herramienta forense de compresión y verificación diseñada para garantizar la integridad de la evidencia digital durante su empaquetado y transporte.</p>
+                <p>A diferencia de las herramientas de compresión convencionales, ForZip implementa un flujo de trabajo forense que calcula los hashes criptográficos (MD5, SHA-1, SHA-256, SHA-512) de los archivos originales durante su inclusión en el contenedor ZIP (un solo pase), asegurando la trazabilidad desde el origen.</p>
+                <p>Soporta cifrado fuerte <strong>AES-256</strong>, generación de informes forenses y de un manifiesto legible por máquina, firma digital opcional (CMS/PKCS#7) y verificación de evidencia re-hasheando el contenido del ZIP contra su manifiesto.</p>
+            </div>
+
+            <div class="card">
+                <h2>Guía de uso</h2>
+                <ol>
+                    <li><strong>Empaquetar (Comprimir):</strong>
+                        <ul>
+                            <li>Arrastre archivos o carpetas al área de trabajo o use el botón de selección.</li>
+                            <li>Defina el <strong>Nivel de compresión</strong> (desde Almacenamiento hasta Ultra).</li>
+                            <li>Opcionalmente, active el <strong>Cifrado AES-256</strong> y genere una contraseña segura.</li>
+                            <li>Seleccione los <strong>Algoritmos de hash</strong> deseados para documentar la evidencia.</li>
+                            <li>Presione "Empaquetar". El hasheado y la compresión ocurren en un solo pase, con feedback en tiempo real.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Extraer:</strong>
+                        <ul>
+                            <li>Seleccione el archivo ZIP origen y la carpeta de destino.</li>
+                            <li>Ingrese la contraseña si el archivo está cifrado.</li>
+                            <li>Durante la extracción, se muestra el progreso y se registran los eventos en la bitácora.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Informe Forense:</strong> Al finalizar un empaquetado con hashes, el sistema solicita los datos del operador para generar el <code>.report.txt</code> y el <code>.manifest.json</code> (y, opcionalmente, firmar el manifiesto). El informe documenta metadatos, tiempos, hashes, rutas de origen y marcas temporales de cada archivo.</li>
+                    <li><strong>Verificar:</strong> Permite cargar un informe (verifica su <code>.sha256</code>) o un manifiesto <code>.manifest.json</code> para re-hashear la evidencia del ZIP, emitiendo un veredicto archivo por archivo y validando la firma digital cuando existe.</li>
+                    <li><strong>Hash Batch:</strong> Utilidad para calcular múltiples hashes de archivos de forma masiva sin necesidad de comprimirlos.</li>
+                </ol>
+                <div class="note">
+                    <strong>Nota:</strong> ForZip utiliza <strong>Zip64</strong> de forma predeterminada para soportar contenedores de evidencia que superen los 4GB, asegurando compatibilidad con grandes volúmenes de datos forenses.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Licencias de terceros</h2>
+                <ul>
+                    <li><strong>SharpZipLib</strong> — Biblioteca principal de compresión. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                    <li><strong>Avalonia UI</strong> — Framework de interfaz de usuario multiplataforma. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                    <li><strong>CommunityToolkit.Mvvm</strong> — Arquitectura de la aplicación. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ==================== ENGLISH ==================== -->
+        <div id="content-en" class="content-section">
+            <div class="card">
+                <h2>Description</h2>
+                <p><strong>ForZip</strong> is a forensic compression and verification tool designed to ensure the integrity of digital evidence during packing and transportation.</p>
+                <p>Unlike conventional compression tools, ForZip implements a forensic workflow that computes cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512) of the original files while including them in the ZIP container (a single pass), ensuring traceability from the source.</p>
+                <p>It supports strong <strong>AES-256</strong> encryption, forensic report and machine-readable manifest generation, optional digital signing (CMS/PKCS#7), and evidence verification by re-hashing the ZIP contents against its manifest.</p>
+            </div>
+
+            <div class="card">
+                <h2>Usage Guide</h2>
+                <ol>
+                    <li><strong>Pack (Compress):</strong>
+                        <ul>
+                            <li>Drag files or folders to the workspace or use the selection button.</li>
+                            <li>Set the <strong>Compression Level</strong> (from Store to Ultra).</li>
+                            <li>Optionally, enable <strong>AES-256 Encryption</strong> and generate a secure password.</li>
+                            <li>Select the desired <strong>Hash Algorithms</strong> to document the evidence.</li>
+                            <li>Press "Pack". Hashing and compression happen in a single pass, with real-time feedback.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Extract:</strong>
+                        <ul>
+                            <li>Select the source ZIP file and the destination folder.</li>
+                            <li>Enter the password if the file is encrypted.</li>
+                            <li>During extraction, progress is displayed and events are recorded in the log.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Forensic Report:</strong> Upon completing a packing operation with hashes, the system requests operator details to generate the <code>.report.txt</code> and the <code>.manifest.json</code> (and, optionally, sign the manifest). The report documents metadata, timestamps, hashes, source paths, and modification times for every processed file.</li>
+                    <li><strong>Verify:</strong> Load a report (verifies its <code>.sha256</code>) or a <code>.manifest.json</code> to re-hash the ZIP evidence, issuing a per-file verdict and validating the digital signature when present.</li>
+                    <li><strong>Hash Batch:</strong> Utility to compute multiple hashes for files in bulk without the need for compression.</li>
+                </ol>
+                <div class="note">
+                    <strong>Note:</strong> ForZip uses <strong>Zip64</strong> by default to support evidence containers exceeding 4GB, ensuring compatibility with large forensic data volumes.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Third-Party Licenses</h2>
+                <ul>
+                    <li><strong>SharpZipLib</strong> — Core compression library. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                    <li><strong>Avalonia UI</strong> — Cross-platform UI framework. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                    <li><strong>CommunityToolkit.Mvvm</strong> — Application architecture. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2026 Patagonia Robot &mdash; Advanced Forensic Technology
+        </div>
+    </div>
+
+    <script>
+        function setLang(lang) {
+            document.getElementById('content-es').classList.remove('active');
+            document.getElementById('content-en').classList.remove('active');
+            document.getElementById('btn-es').classList.remove('active');
+            document.getElementById('btn-en').classList.remove('active');
+            if (lang === 'es') { document.getElementById('content-es').classList.add('active'); document.getElementById('btn-es').classList.add('active'); }
+            else { document.getElementById('content-en').classList.add('active'); document.getElementById('btn-en').classList.add('active'); }
+        }
+        var userLang = navigator.language || navigator.userLanguage;
+        if (userLang.toLowerCase().startsWith('es')) setLang('es'); else setLang('en');
+    </script>
+</body>
+</html>
