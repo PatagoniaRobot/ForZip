@@ -103,7 +103,10 @@ public partial class MainWindowViewModel : ViewModelBase
         NavigateToZip();
     }
 
-    public string AppTitle => $"ForZip {_localization.Get("app_version")}";
+    public string AppTitle => $"ForZip {Core.AppInfo.DisplayVersion}";
+
+    /// <summary>Versión mostrada en el pie del sidebar (fuente única: AppInfo).</summary>
+    public string AppVersion => Core.AppInfo.DisplayVersion;
     public string MenuZip => $"📦  {_localization.Get("compress")}";
     public string MenuUnzip => $"📂  {_localization.Get("extract")}";
     public string MenuHashBatch => $"#   {_localization.Get("hash_batch")}";

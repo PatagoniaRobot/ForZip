@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-07-03
 
 ### Added
 - **Simple mode (guided) in the Compress view**: a toggle switches between *Simple* (drop the evidence, review, one big "Package evidence" button — ForZip enforces the recommended forensic defaults: SHA-256 per file, report, manifest and sidecar; technical options hidden) and *Advanced* (the full previous screen). The chosen mode persists in `config.json` (`SimpleMode`). AES-256 password protection remains available in both modes.
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Verify on `.p7s` files**: right-clicking a detached signature now offers *Verify with ForZip*; the GUI resolves `x.manifest.json.p7s` to its manifest (also when dropped onto the Verify view).
 
 ### Changed
+- **Version centralized in `AppInfo` (Core)**: GUI (window title, sidebar, About), CLI `--version`, the forensic report and the manifest all read the same constant; assembly `<Version>` set in the three projects. Fixes the stale `v1.0.0` shown in the sidebar.
 - The Compress view is fully localized (browse buttons, encryption label, tooltips, progress labels and file-picker titles were hardcoded in Spanish).
 
 ### Fixed

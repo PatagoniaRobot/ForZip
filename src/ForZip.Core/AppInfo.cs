@@ -23,25 +23,15 @@
 //
 // =============================================================================
 
-namespace ForZip.Core.Models;
+namespace ForZip.Core;
 
-public class ReportData
+/// <summary>
+/// Fuente única de verdad de la versión de ForZip. El informe forense declara con qué
+/// versión se generó la evidencia, por lo que este valor NO debe duplicarse en otro lado:
+/// GUI, CLI, manifiesto e informe deben leerlo de acá.
+/// </summary>
+public static class AppInfo
 {
-    public OperatorInfo? Operator { get; set; }
-    public string? CaseNumber { get; set; }
-    public string? CaseDescription { get; set; }
-    public string? Court { get; set; }
-    public OperationType Operation { get; set; }
-    public int CompressionLevel { get; set; }
-    public bool HasPassword { get; set; }
-    public HashSet<HashAlgorithmType> Algorithms { get; set; } = new();
-    public string? ZipFilePath { get; set; }
-    public long? ZipFileSize { get; set; }
-    public string? ZipHash { get; set; }
-    public List<HashResult> FileResults { get; set; } = new();
-
-    /// <summary>Volúmenes del archivo dividido (vacío para archivo único).</summary>
-    public List<VolumeInfo> Volumes { get; set; } = new();
-
-    public string ForZipVersion { get; set; } = AppInfo.DisplayVersion;
+    public const string Version = "1.2.0";
+    public const string DisplayVersion = "v" + Version;
 }

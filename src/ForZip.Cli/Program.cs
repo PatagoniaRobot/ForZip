@@ -37,7 +37,7 @@ internal static class Program
 
         if (command is "-v" or "--version" || parser.HasOption("-v", "--version"))
         {
-            Console.WriteLine($"ForZip v1.1.0");
+            Console.WriteLine($"ForZip {ForZip.Core.AppInfo.DisplayVersion}");
             return 0;
         }
 

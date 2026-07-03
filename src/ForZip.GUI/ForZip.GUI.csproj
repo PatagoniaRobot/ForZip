@@ -11,6 +11,8 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\ForZip.ico</ApplicationIcon>
+    <!-- Mantener sincronizada con AppInfo.Version (fuente de verdad en código) -->
+    <Version>1.2.0</Version>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 

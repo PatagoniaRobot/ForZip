@@ -83,7 +83,7 @@
                 Margin="0,2"/>
 
         <TextBlock DockPanel.Dock="Bottom"
-                   Text="v1.0.0"
+                   Text="{Binding AppVersion}"
                    FontSize="11"
                    Foreground="{DynamicResource TextSecondaryBrush}"
                    HorizontalAlignment="Center"

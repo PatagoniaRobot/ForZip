@@ -36,7 +36,7 @@ public class ForensicManifest
     /// <summary>Versión del esquema del manifiesto, para compatibilidad futura.</summary>
     public string FormatVersion { get; set; } = "1.1";
 
-    public string ForZipVersion { get; set; } = "v1.1.0";
+    public string ForZipVersion { get; set; } = AppInfo.DisplayVersion;
 
     public DateTimeOffset GeneratedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
