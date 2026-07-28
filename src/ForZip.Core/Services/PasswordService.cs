@@ -31,9 +31,6 @@ namespace ForZip.Core.Services;
 
 public class PasswordService : IPasswordService
 {
-    private const int MinLength = 8;
-    private const int MaxLength = 128;
-
     private const string Uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private const string Lowercase = "abcdefghijklmnopqrstuvwxyz";
     private const string Digits = "0123456789";
@@ -41,15 +38,12 @@ public class PasswordService : IPasswordService
     // Conjunto completo de 32 símbolos ASCII imprimibles (sin alfanuméricos ni espacio)
     private const string Symbols = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
 
-    // Caracteres considerados ambiguos para lectura humana (cero/o, uno/L/i, pipe)
-    private const string AmbiguousChars = "0OoIl1|";
-
     public string GeneratePassword(PasswordOptions options)
     {
-        if (options.Length < MinLength || options.Length > MaxLength)
+        if (options.Length < PasswordOptions.MinLength || options.Length > PasswordOptions.MaxLength)
         {
             throw new ArgumentException(
-                $"La longitud debe estar entre {MinLength} y {MaxLength}.",
+                $"La longitud debe estar entre {PasswordOptions.MinLength} y {PasswordOptions.MaxLength}.",
                 nameof(options));
         }
 
@@ -102,22 +96,22 @@ public class PasswordService : IPasswordService
 
         if (options.IncludeUppercase)
         {
-            classes.Add(FilterAmbiguous(Uppercase, options.ExcludeAmbiguous));
+            classes.Add(FilterAmbiguous(Uppercase));
         }
 
         if (options.IncludeLowercase)
         {
-            classes.Add(FilterAmbiguous(Lowercase, options.ExcludeAmbiguous));
+            classes.Add(FilterAmbiguous(Lowercase));
         }
 
         if (options.IncludeDigits)
         {
-            classes.Add(FilterAmbiguous(Digits, options.ExcludeAmbiguous));
+            classes.Add(FilterAmbiguous(Digits));
         }
 
         if (options.IncludeSymbols)
         {
-            classes.Add(FilterAmbiguous(Symbols, options.ExcludeAmbiguous));
+            classes.Add(FilterAmbiguous(Symbols));
         }
 
         // Descartar clases que quedaron vacías tras filtrar
@@ -125,17 +119,16 @@ public class PasswordService : IPasswordService
         return classes;
     }
 
-    private static string FilterAmbiguous(string source, bool excludeAmbiguous)
+    /// <summary>
+    /// Quita del alfabeto los caracteres ambiguos. Se aplica incondicionalmente: el generador
+    /// no puede producir caracteres que el operador no sepa transcribir sin ambigüedad.
+    /// </summary>
+    private static string FilterAmbiguous(string source)
     {
-        if (!excludeAmbiguous)
-        {
-            return source;
-        }
-
         var filtered = new System.Text.StringBuilder(source.Length);
         foreach (var c in source)
         {
-            if (AmbiguousChars.IndexOf(c) < 0)
+            if (PasswordOptions.AmbiguousChars.IndexOf(c) < 0)
             {
                 filtered.Append(c);
             }

@@ -67,6 +67,61 @@
               CornerRadius="4"
               Padding="16"
               Background="{DynamicResource BgCardBrush}">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{Binding LabelUpdates}"
+                     FontWeight="SemiBold"
+                     Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="{Binding ButtonCheckUpdates}"
+                    Command="{Binding CheckUpdatesCommand}"
+                    IsEnabled="{Binding !IsCheckingUpdates}"
+                    Padding="16,8"/>
+            <Button Content="{Binding ButtonOpenRelease}"
+                    Command="{Binding OpenReleasePageCommand}"
+                    IsVisible="{Binding IsUpdateAvailable}"
+                    Background="{DynamicResource AccentBrush}"
+                    Foreground="White"
+                    Padding="16,8"/>
+          </StackPanel>
+
+          <TextBlock Text="{Binding UpdateStatusMessage}"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     FontSize="12"
+                     TextWrapping="Wrap"/>
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasReleaseNotes}">
+            <TextBlock Text="{Binding LabelReleaseNotes}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Margin="0,6,0,0"/>
+            <Border Background="{DynamicResource BgSecondaryBrush}"
+                    CornerRadius="4"
+                    Padding="12"
+                    MaxHeight="220">
+              <ScrollViewer>
+                <SelectableTextBlock Text="{Binding ReleaseNotes}"
+                                     Foreground="{DynamicResource TextSecondaryBrush}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap"/>
+              </ScrollViewer>
+            </Border>
+          </StackPanel>
+
+          <TextBlock Text="{Binding LabelManualNote}"
+                     Foreground="{DynamicResource TextSecondaryBrush}"
+                     FontSize="11"
+                     TextWrapping="Wrap"
+                     Margin="0,4,0,0"/>
+        </StackPanel>
+      </Border>
+
+      <Border BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="16"
+              Background="{DynamicResource BgCardBrush}">
         <StackPanel Spacing="6">
           <TextBlock Text="AVISO LEGAL"
                      FontWeight="SemiBold"

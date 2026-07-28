@@ -45,6 +45,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ILogService _logService;
     private readonly IOperatorDialogService _operatorDialog;
     private readonly IShellIntegrationService _shellIntegration;
+    private readonly AboutViewModel _aboutVm;
 
     private ZipViewModel? _zipVm;
     private UnzipViewModel? _unzipVm;
@@ -52,7 +53,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private VerifyReportViewModel? _verifyVm;
     private PasswordGeneratorViewModel? _passwordGenVm;
     private SettingsViewModel? _settingsVm;
-    private AboutViewModel? _aboutVm;
 
     [ObservableProperty]
     private object? _currentView;
@@ -78,7 +78,8 @@ public partial class MainWindowViewModel : ViewModelBase
         IThemeService themeService,
         ILogService logService,
         IOperatorDialogService operatorDialog,
-        IShellIntegrationService shellIntegration) : base(localization)
+        IShellIntegrationService shellIntegration,
+        IUpdateService updateService) : base(localization)
     {
         _zipService = zipService;
         _hashService = hashService;
@@ -94,6 +95,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         LogConsole = new LogConsoleViewModel(_logService, localization);
 
+        // Acerca de se crea de entrada (es solo texto) porque el aviso de versión nueva se
+        // muestra en el menú lateral, sin esperar a que el usuario entre a la sección.
+        _aboutVm = new AboutViewModel(localization, updateService);
+        _aboutVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AboutViewModel.IsUpdateAvailable))
+            {
+                OnPropertyChanged(nameof(MenuAbout));
+            }
+        };
+
         // Aplicar configuración guardada (idioma, tema) antes de inicializar la vista por defecto
         var config = _configService.Load();
         _localization.SetLanguage(config.Language);
@@ -101,6 +113,13 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentLanguage = config.Language;
 
         NavigateToZip();
+
+        if (config.CheckForUpdatesOnStartup)
+        {
+            // Sin await: la consulta es opcional y no debe demorar la apertura de la ventana.
+            // El comando absorbe sus propios errores, así que no puede tumbar el arranque.
+            _ = _aboutVm.CheckUpdatesCommand.ExecuteAsync(null);
+        }
     }
 
     public string AppTitle => $"ForZip {Core.AppInfo.DisplayVersion}";
@@ -113,7 +132,10 @@ public partial class MainWindowViewModel : ViewModelBase
     public string MenuVerify => $"✓   {_localization.Get("verify")}";
     public string MenuPassword => $"🔑  {_localization.Get("password_gen")}";
     public string MenuSettings => $"⚙   {_localization.Get("settings")}";
-    public string MenuAbout => $"ℹ   {_localization.Get("about")}";
+    /// <summary>El punto marca que hay una versión nueva publicada, sin robar el foco.</summary>
+    public string MenuAbout => _aboutVm.IsUpdateAvailable
+        ? $"ℹ   {_localization.Get("about")}   •"
+        : $"ℹ   {_localization.Get("about")}";
     public string StatusReady => _localization.Get("ready");
 
     protected override void OnLanguageChanged()
@@ -186,7 +208,6 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void NavigateToAbout()
     {
-        _aboutVm ??= new AboutViewModel(_localization);
         CurrentView = _aboutVm;
         ActiveSection = "about";
         LogNavigation("about");

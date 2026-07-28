@@ -21,8 +21,8 @@ public class GenPassCommand
 
     public int Execute(CommandParser parser)
     {
-        var lenStr = parser.GetOption("-n", "--length") ?? "16";
-        int length = int.TryParse(lenStr, out var l) ? l : 16;
+        var lenStr = parser.GetOption("-n", "--length") ?? PasswordOptions.DefaultLength.ToString();
+        int length = int.TryParse(lenStr, out var l) ? l : PasswordOptions.DefaultLength;
 
         var options = new PasswordOptions
         {
@@ -30,8 +30,7 @@ public class GenPassCommand
             IncludeUppercase = !parser.HasOption("--no-upper", "--no-upper"),
             IncludeLowercase = !parser.HasOption("--no-lower", "--no-lower"),
             IncludeDigits = !parser.HasOption("--no-digits", "--no-digits"),
-            IncludeSymbols = parser.HasOption("-s", "--symbols"),
-            ExcludeAmbiguous = parser.HasOption("-a", "--avoid-ambiguous")
+            IncludeSymbols = parser.HasOption("-s", "--symbols")
         };
 
         try

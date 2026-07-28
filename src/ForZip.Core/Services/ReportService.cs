@@ -52,13 +52,7 @@ public class ReportService : IReportService
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private static readonly HashAlgorithmType[] AlgorithmDisplayOrder =
-    {
-        HashAlgorithmType.MD5,
-        HashAlgorithmType.SHA1,
-        HashAlgorithmType.SHA256,
-        HashAlgorithmType.SHA512
-    };
+    private static readonly HashAlgorithmType[] AlgorithmDisplayOrder = HashAlgorithmNames.DisplayOrder;
 
     private readonly ILocalizationService _localization;
 
@@ -532,16 +526,7 @@ public class ReportService : IReportService
     }
 
     private static string GetAlgorithmDisplayName(HashAlgorithmType algorithm)
-    {
-        return algorithm switch
-        {
-            HashAlgorithmType.MD5 => "MD5",
-            HashAlgorithmType.SHA1 => "SHA-1",
-            HashAlgorithmType.SHA256 => "SHA-256",
-            HashAlgorithmType.SHA512 => "SHA-512",
-            _ => algorithm.ToString()
-        };
-    }
+        => HashAlgorithmNames.Display(algorithm);
 
     private static int GetHashHexWidth(HashAlgorithmType algorithm)
     {

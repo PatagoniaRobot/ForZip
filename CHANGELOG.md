@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-28
+
+### Added
+- **Quick hash window from the context menu**: *Calculate hash (ForZip)* no longer opens the full application. It launches a single self-contained window (7-Zip style) listing, per file, the name, full path, size, UTC modification timestamp and the selected hashes. Algorithms can be toggled in place (already-computed hashes are reused, only what is missing is read from disk again). The result can be copied to the clipboard as plain text or exported as a `.txt` forensic report in the standard ForZip format (UTF-8 with BOM), taking the operator data from the saved configuration without an extra dialog. A multi-file Explorer selection — which Windows launches as one process per file — is coalesced into a single window through a dedicated single-instance channel (`ForZip.QuickHash`), kept separate from the main application's channel so a quick hash never lands inside an open ForZip window.
+
+- **Update check (manual, no self-update)**: a *Check for updates* button in About queries the project's latest published release and reports whether a newer version exists, showing its release notes inline and offering to open the release page in the browser. Optionally the check also runs at startup — **off by default** (`CheckForUpdatesOnStartup`), since it is the only network connection ForZip initiates on its own; when it finds something, the About entry in the sidebar gets a discreet dot rather than a dialog. ForZip deliberately **does not download or replace its own binary**: the report declares which version produced each piece of evidence, and many labs run validated, frozen tool versions, so changing version must stay an explicit operator decision. Failure to reach the network is reported inline and never interrupts work.
+
+### Changed
+- **The password generator no longer emits ambiguous characters**. Exclusion of `0 O o I l 1 |` used to be an opt-in checkbox (off by default); it is now unconditional and the option is gone. Rationale: a forensic password is transcribed and dictated by hand, so a character that cannot be read unambiguously is a transcription error waiting to happen. The effective pool is 87 characters with all classes enabled (24 uppercase + 24 lowercase + 8 digits + 31 symbols); entropy reporting already accounts for the reduced pool. CLI `genpass` drops `-a|--avoid-ambiguous` and documents its options in `--help`.
+- **Password length is now typed as well as dragged**: the generator has a numeric field next to the slider, both bounded to 8–128 and clamped in the ViewModel so out-of-range typing is corrected instead of raising. The 8-character minimum was already enforced by `PasswordService`; the bounds now live in `PasswordOptions` (`MinLength`/`MaxLength`/`DefaultLength`/`AmbiguousChars`) as a single source of truth shared by Core, CLI, GUI and tests.
+- Algorithm display names and their canonical order moved to `HashAlgorithmNames` (Core.Models); `ReportService` now delegates to it instead of keeping a private copy.
+
+### Fixed
+- **The bundled help page (`Help_ForZip.html`, opened from About) was stuck at "v0.9.0 Beta"** and documented only the 1.0-era feature set. It now declares the current version and covers everything shipped since: split archives, evidence verification and manifest signing with RFC 3161 timestamping, the Explorer context menu and its quick hash window, the password generator, simple/advanced compress modes and the CLI. A test (`HelpPageTests`) now fails the build if the version stated in the page ever drifts from `AppInfo.Version` again.
+- **Saving from the Settings view silently reset settings owned by other views.** `Save()` built a brand-new `AppConfig` from the fields on screen, so `SimpleMode` (written by the Compress view) and `TimestampServerUrl` went back to their defaults every time the user pressed Save in Settings. It now loads the stored configuration and overwrites only the fields that screen actually edits.
+- **The help page no longer pulls a font from Google Fonts.** A portable forensic tool that advertises "no telemetry" should not make a network request when its own documentation is opened — and on an offline or air-gapped workstation the request just failed and the typography silently degraded. The page now uses a local system font stack and is fully self-contained.
+
 ## [1.2.0] - 2026-07-03
 
 ### Added

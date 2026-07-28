@@ -27,10 +27,24 @@ namespace ForZip.Core.Models;
 
 public class PasswordOptions
 {
-    public int Length { get; set; } = 16;
+    /// <summary>Longitud mínima admitida. Por debajo de 8 la contraseña no se considera utilizable.</summary>
+    public const int MinLength = 8;
+
+    public const int MaxLength = 128;
+
+    public const int DefaultLength = 16;
+
+    /// <summary>
+    /// Caracteres visualmente ambiguos (cero/O/o, uno/I/l, barra vertical). Se excluyen
+    /// SIEMPRE del pool: una contraseña forense se transcribe y se dicta a mano, y un
+    /// carácter que no se puede leer sin ambigüedad es un error de transcripción esperando
+    /// ocurrir. No es opcional por diseño.
+    /// </summary>
+    public const string AmbiguousChars = "0OoIl1|";
+
+    public int Length { get; set; } = DefaultLength;
     public bool IncludeUppercase { get; set; } = true;
     public bool IncludeLowercase { get; set; } = true;
     public bool IncludeDigits { get; set; } = true;
     public bool IncludeSymbols { get; set; } = true;
-    public bool ExcludeAmbiguous { get; set; } = false;
 }

@@ -79,6 +79,9 @@ public partial class SettingsViewModel : ViewModelBase
     private string _operatorPhone = string.Empty;
 
     [ObservableProperty]
+    private bool _checkForUpdatesOnStartup;
+
+    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
@@ -119,6 +122,8 @@ public partial class SettingsViewModel : ViewModelBase
     public string LabelThemeDark => _localization.Get("settings_theme_dark");
     public string LabelThemeLight => _localization.Get("settings_theme_light");
     public string LabelOutputDir => _localization.Get("settings_output_dir");
+    public string LabelCheckUpdates => _localization.Get("settings_check_updates");
+    public string LabelCheckUpdatesHint => _localization.Get("settings_check_updates_hint");
     public string ButtonSave => _localization.Get("save");
     public string ButtonReset => _localization.Get("settings_reset");
 
@@ -139,6 +144,8 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(LabelThemeDark));
         OnPropertyChanged(nameof(LabelThemeLight));
         OnPropertyChanged(nameof(LabelOutputDir));
+        OnPropertyChanged(nameof(LabelCheckUpdates));
+        OnPropertyChanged(nameof(LabelCheckUpdatesHint));
         OnPropertyChanged(nameof(ButtonSave));
         OnPropertyChanged(nameof(ButtonReset));
         OnPropertyChanged(nameof(StatusMessage));
@@ -150,21 +157,25 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void Save()
     {
-        var config = new AppConfig
+        // Partimos de la configuración en disco y solo pisamos lo que esta pantalla edita.
+        // Construir un AppConfig nuevo descartaba los ajustes que se guardan desde otras vistas
+        // (SimpleMode desde Comprimir, TimestampServerUrl), y volvían a su valor por defecto
+        // cada vez que se tocaba Guardar acá.
+        var config = _configService.Load();
+
+        config.Language = Language;
+        config.Theme = Theme;
+        config.DefaultCompressionLevel = DefaultCompressionLevel;
+        config.DefaultHashAlgorithms = BuildAlgorithms();
+        config.DefaultOutputDirectory = string.IsNullOrEmpty(OutputDirectory) ? null : OutputDirectory;
+        config.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
+        config.Operator = new OperatorInfo
         {
-            Language = Language,
-            Theme = Theme,
-            DefaultCompressionLevel = DefaultCompressionLevel,
-            DefaultHashAlgorithms = BuildAlgorithms(),
-            DefaultOutputDirectory = string.IsNullOrEmpty(OutputDirectory) ? null : OutputDirectory,
-            Operator = new OperatorInfo
-            {
-                Name = ToNullIfEmpty(OperatorName),
-                Title = ToNullIfEmpty(OperatorTitle),
-                Organization = ToNullIfEmpty(OperatorOrganization),
-                Email = ToNullIfEmpty(OperatorEmail),
-                Phone = ToNullIfEmpty(OperatorPhone)
-            }
+            Name = ToNullIfEmpty(OperatorName),
+            Title = ToNullIfEmpty(OperatorTitle),
+            Organization = ToNullIfEmpty(OperatorOrganization),
+            Email = ToNullIfEmpty(OperatorEmail),
+            Phone = ToNullIfEmpty(OperatorPhone)
         };
 
         _configService.Save(config);
@@ -262,6 +273,7 @@ public partial class SettingsViewModel : ViewModelBase
         Theme = config.Theme;
         OutputDirectory = config.DefaultOutputDirectory ?? string.Empty;
         DefaultCompressionLevel = config.DefaultCompressionLevel;
+        CheckForUpdatesOnStartup = config.CheckForUpdatesOnStartup;
 
         DefaultUseMd5 = config.DefaultHashAlgorithms.Contains(HashAlgorithmType.MD5);
         DefaultUseSha1 = config.DefaultHashAlgorithms.Contains(HashAlgorithmType.SHA1);

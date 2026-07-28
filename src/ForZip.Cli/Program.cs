@@ -5,6 +5,7 @@
 
 using ForZip.Cli.Commands;
 using ForZip.Core.Interfaces;
+using ForZip.Core.Models;
 using ForZip.Core.Services;
 
 namespace ForZip.Cli;
@@ -107,6 +108,13 @@ internal static class Program
         Console.WriteLine("  --sign-cert-password Contraseña del PFX, si la tiene.");
         Console.WriteLine("  --timestamp-url <url> Sella la firma con una TSA RFC 3161 (ej: http://timestamp.digicert.com).");
         Console.WriteLine("  --split <tamaño>     Divide el ZIP en volúmenes .001/.002 (ej: 700M, 4096MB, 1.5G).");
+        Console.WriteLine("\nOpciones de genpass:");
+        Console.WriteLine($"  -n, --length <n>     Longitud de la contraseña (mínimo {PasswordOptions.MinLength}, máximo {PasswordOptions.MaxLength}; por defecto {PasswordOptions.DefaultLength}).");
+        Console.WriteLine("  -s, --symbols        Incluye símbolos además de letras y dígitos.");
+        Console.WriteLine("  --no-upper           Excluye mayúsculas.");
+        Console.WriteLine("  --no-lower           Excluye minúsculas.");
+        Console.WriteLine("  --no-digits          Excluye dígitos.");
+        Console.WriteLine($"  Los caracteres ambiguos ({PasswordOptions.AmbiguousChars}) se excluyen siempre; no es configurable.");
         Console.WriteLine("\nEjemplos:");
         Console.WriteLine("  forzip zip -i evidencia.dd -o evidencia.zip --hash sha256 --report r.txt --operator \"J. Pérez\"");
         Console.WriteLine("  forzip zip -i evidencia.dd -o evidencia.zip --hash sha256 --report r.txt --split 700M");

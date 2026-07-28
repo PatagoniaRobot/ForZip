@@ -31,8 +31,6 @@ namespace ForZip.Tests.Services;
 
 public class PasswordServiceTests
 {
-    private const string AmbiguousChars = "0OoIl1|";
-
     [Fact]
     public void GeneratePassword_AllClasses_ContainsAllClasses()
     {
@@ -73,7 +71,7 @@ public class PasswordServiceTests
     }
 
     [Fact]
-    public void GeneratePassword_ExcludeAmbiguous_DoesNotContainAmbiguous()
+    public void GeneratePassword_NeverContainsAmbiguousChars()
     {
         var service = new PasswordService();
         var options = new PasswordOptions
@@ -82,17 +80,38 @@ public class PasswordServiceTests
             IncludeUppercase = true,
             IncludeLowercase = true,
             IncludeDigits = true,
-            IncludeSymbols = true,
-            ExcludeAmbiguous = true
+            IncludeSymbols = true
         };
 
         for (int trial = 0; trial < 50; trial++)
         {
             var password = service.GeneratePassword(options);
-            foreach (var ambiguous in AmbiguousChars)
+            foreach (var ambiguous in PasswordOptions.AmbiguousChars)
             {
                 Assert.DoesNotContain(ambiguous.ToString(), password);
             }
+        }
+    }
+
+    [Fact]
+    public void GeneratePassword_OnlyDigits_NeverContainsZeroOrOne()
+    {
+        // Sin dígitos ambiguos el alfabeto numérico queda en 2-9: el caso límite donde
+        // el filtro incondicional podría dejar una clase vacía o colar un 0/1.
+        var service = new PasswordService();
+        var options = new PasswordOptions
+        {
+            Length = 32,
+            IncludeUppercase = false,
+            IncludeLowercase = false,
+            IncludeDigits = true,
+            IncludeSymbols = false
+        };
+
+        for (int trial = 0; trial < 50; trial++)
+        {
+            var password = service.GeneratePassword(options);
+            Assert.All(password, c => Assert.InRange(c, '2', '9'));
         }
     }
 
@@ -150,14 +169,14 @@ public class PasswordServiceTests
             IncludeUppercase = true,
             IncludeLowercase = true,
             IncludeDigits = true,
-            IncludeSymbols = true,
-            ExcludeAmbiguous = false
+            IncludeSymbols = true
         };
 
         var entropy = service.CalculateEntropy(options, 12);
 
-        // Pool 94 (26+26+10+32) → 12 * log2(94) ≈ 78.66
-        Assert.Equal(12 * Math.Log2(94), entropy, 5);
+        // El pool ya viene descontado de ambiguos: 24 (26-O,I) + 24 (26-o,l) + 8 (10-0,1)
+        // + 31 (32-|) = 87 → 12 * log2(87) ≈ 77.32
+        Assert.Equal(12 * Math.Log2(87), entropy, 5);
     }
 
     [Fact]

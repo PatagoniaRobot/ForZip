@@ -38,7 +38,7 @@ public partial class PasswordGeneratorViewModel : ObservableObject
     private readonly ILocalizationService _localization;
 
     [ObservableProperty]
-    private int _length = 16;
+    private int _length = PasswordOptions.DefaultLength;
 
     [ObservableProperty]
     private bool _includeUppercase = true;
@@ -51,9 +51,6 @@ public partial class PasswordGeneratorViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _includeSymbols = true;
-
-    [ObservableProperty]
-    private bool _excludeAmbiguous;
 
     [ObservableProperty]
     private string _generatedPassword = string.Empty;
@@ -75,6 +72,14 @@ public partial class PasswordGeneratorViewModel : ObservableObject
         _localization = localization;
         Generate();
     }
+
+    /// <summary>Cotas de longitud, expuestas para que el Slider y el campo numérico las tomen del modelo.</summary>
+    public int MinLength => PasswordOptions.MinLength;
+
+    public int MaxLength => PasswordOptions.MaxLength;
+
+    /// <summary>Caracteres ambiguos excluidos siempre, separados para que se lean de a uno.</summary>
+    public string ExcludedCharsDisplay => string.Join(' ', PasswordOptions.AmbiguousChars.ToCharArray());
 
     [RelayCommand]
     private void Generate()
@@ -120,8 +125,7 @@ public partial class PasswordGeneratorViewModel : ObservableObject
             IncludeUppercase = IncludeUppercase,
             IncludeLowercase = IncludeLowercase,
             IncludeDigits = IncludeDigits,
-            IncludeSymbols = IncludeSymbols,
-            ExcludeAmbiguous = ExcludeAmbiguous
+            IncludeSymbols = IncludeSymbols
         };
     }
 
@@ -134,10 +138,23 @@ public partial class PasswordGeneratorViewModel : ObservableObject
     }
 
     // Cualquier cambio en las opciones dispara una nueva generación
-    partial void OnLengthChanged(int value) => Generate();
+    partial void OnLengthChanged(int value)
+    {
+        // El campo numérico admite tipeo libre: una longitud fuera de rango se corrige aquí
+        // en vez de dejar que el servicio lance. Reasignar dispara este mismo handler con el
+        // valor ya válido, que es el que genera.
+        var clamped = Math.Clamp(value, PasswordOptions.MinLength, PasswordOptions.MaxLength);
+        if (clamped != value)
+        {
+            Length = clamped;
+            return;
+        }
+
+        Generate();
+    }
+
     partial void OnIncludeUppercaseChanged(bool value) => Generate();
     partial void OnIncludeLowercaseChanged(bool value) => Generate();
     partial void OnIncludeDigitsChanged(bool value) => Generate();
     partial void OnIncludeSymbolsChanged(bool value) => Generate();
-    partial void OnExcludeAmbiguousChanged(bool value) => Generate();
 }

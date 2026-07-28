@@ -16,9 +16,9 @@
 
 1.  **Empaquetar (Compress)**: El núcleo del sistema. Permite agregar archivos y carpetas, seleccionar algoritmos de hash (MD5, SHA-1, SHA-256, SHA-512), definir el nivel de compresión y aplicar cifrado.
 2.  **Extraer (Extract)**: Descompresión segura de archivos ZIP, con soporte para contenedores cifrados y registro detallado de eventos en la bitácora.
-3.  **Hash Batch**: Herramienta de cálculo masivo de hashes para archivos en disco sin necesidad de empaquetarlos, ideal para inventarios rápidos de evidencia.
+3.  **Hash Batch**: Herramienta de cálculo masivo de hashes para archivos en disco sin necesidad de empaquetarlos, ideal para inventarios rápidos de evidencia. Desde el menú contextual del Explorador, la opción *Calcular hash* abre en cambio una ventana liviana e independiente (estilo 7-Zip) con nombre, ruta, tamaño, fecha y hashes, lista para copiar al portapapeles o exportar como informe `.txt`, sin levantar la aplicación completa.
 4.  **Verificar**: Motor de auditoría que verifica la integridad de un informe (contra su `.sha256`) o re-hashea un contenedor ZIP contra su manifiesto, validando además la firma digital cuando existe.
-5.  **Generador de Contraseñas**: Utilidad integrada para crear contraseñas de alta entropía adecuadas para la protección de evidencia sensible.
+5.  **Generador de Contraseñas**: Utilidad integrada para crear contraseñas de alta entropía adecuadas para la protección de evidencia sensible. La longitud es configurable (mínimo 8 caracteres) y los caracteres visualmente ambiguos (`0 O o I l 1 |`) se excluyen siempre, para que la contraseña se pueda transcribir o dictar sin errores.
 
 ## Guía Rápida de Uso
 

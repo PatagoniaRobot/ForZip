@@ -32,4 +32,13 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- La guía de ayuda vive en el proyecto GUI, que este proyecto no puede referenciar
+         (net8.0 vs net8.0-windows). Se enlaza como contenido para poder verificar que la
+         versión que declara no se desincronice de AppInfo, como ya ocurrió una vez. -->
+    <None Include="..\..\src\ForZip.GUI\Help_ForZip.html" Link="Help_ForZip.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

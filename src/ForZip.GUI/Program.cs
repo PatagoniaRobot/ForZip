@@ -25,12 +25,27 @@
 
 using System;
 using Avalonia;
+using ForZip.Core.Shell;
 using ForZip.GUI.Services;
 
 namespace ForZip.GUI;
 
 internal class Program
 {
+    /// <summary>
+    /// Identificador de instancia única del modo "hash rápido". Es un canal aparte del de la
+    /// aplicación normal: una ventanita de hash no debe acumularse dentro de una ForZip abierta
+    /// (ni al revés), pero las invocaciones de hash entre sí sí deben juntarse en una sola
+    /// ventana, porque el Explorador lanza un proceso por archivo seleccionado.
+    /// </summary>
+    private const string QuickHashAppId = "ForZip.QuickHash";
+
+    private const string MainAppId = "ForZip";
+
+    /// <summary>Verdadero si estos argumentos corresponden al modo hash rápido del menú contextual.</summary>
+    public static bool IsQuickHashMode(string[]? args)
+        => ShellArgs.Parse(args)?.Verb == ShellVerb.Hash;
+
     // Punto de entrada de la aplicación Avalonia.
     [STAThread]
     public static int Main(string[] args)
@@ -46,7 +61,7 @@ internal class Program
         SingleInstance? single = null;
         try
         {
-            single = new SingleInstance("ForZip");
+            single = new SingleInstance(IsQuickHashMode(args) ? QuickHashAppId : MainAppId);
             if (!single.IsFirstInstance)
             {
                 if (single.TrySendArgs(args))

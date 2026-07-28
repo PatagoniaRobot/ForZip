@@ -2,13 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ForZip - Help</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Sin recursos externos a propósito: ForZip es portable y no hace peticiones de red.
+         Esta guía debe verse igual en una estación aislada o desde un pendrive. -->
     <style>
-        body { font-family: 'Montserrat', Arial, sans-serif; background-color: #1a1a2e; color: #E2E8F0; line-height: 1.6; margin: 0; padding: 40px 20px; }
+        body { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #1a1a2e; color: #E2E8F0; line-height: 1.6; margin: 0; padding: 40px 20px; }
         .container { max-width: 900px; margin: 0 auto; position: relative; }
         .lang-toggle { position: absolute; top: 0; right: 0; background: #16213e; border: 1px solid #334155; border-radius: 4px; padding: 5px; display: flex; gap: 5px; }
-        .lang-btn { font-family: 'Montserrat', Arial, sans-serif; background: transparent; color: #94A3B8; border: none; cursor: pointer; font-weight: 600; padding: 5px 10px; border-radius: 3px; font-size: 13px; }
+        .lang-btn { font-family: inherit; background: transparent; color: #94A3B8; border: none; cursor: pointer; font-weight: 600; padding: 5px 10px; border-radius: 3px; font-size: 13px; }
         .lang-btn.active { background: #10B981; color: #1a1a2e; }
         .header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
         .h-line1 { color: #10B981; font-size: 28px; letter-spacing: 2px; }
@@ -20,7 +22,13 @@
         ul, ol { padding-left: 20px; }
         li { margin-bottom: 10px; }
         strong { color: #00D4AA; }
-        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #10B981; }
+        code { background: #1a1a2e; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #10B981; font-family: Consolas, 'Courier New', monospace; }
+        pre { background: #1a1a2e; border: 1px solid #334155; border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13px; }
+        pre code { background: none; padding: 0; color: #E2E8F0; }
+        table { width: 100%; border-collapse: collapse; margin: 8px 0 4px 0; font-size: 14px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #334155; vertical-align: top; }
+        th { color: #10B981; font-weight: 600; }
+        td code { white-space: nowrap; }
         .footer { text-align: center; color: #94A3B8; font-size: 12px; margin-top: 50px; padding-top: 20px; border-top: 1px solid #334155; }
         .content-section { display: none; }
         .content-section.active { display: block; }
@@ -38,7 +46,8 @@
         <div class="header">
             <div class="h-line1"><span style="font-weight:700">PATAGONIA</span> <span style="font-weight:400">ROBOT</span></div>
             <div class="h-line2"><strong style="color:#10B981">For</strong><strong style="color:#10B981">Zip</strong></div>
-            <div class="h-line3">v0.9.0 Beta</div>
+            <!-- La versión la controla ForZip.Core.AppInfo.Version; HelpPageTests falla si divergen. -->
+            <div class="h-line3">v1.3.0</div>
         </div>
 
         <!-- ==================== ESPAÑOL ==================== -->
@@ -47,7 +56,8 @@
                 <h2>Descripción</h2>
                 <p><strong>ForZip</strong> es una herramienta forense de compresión y verificación diseñada para garantizar la integridad de la evidencia digital durante su empaquetado y transporte.</p>
                 <p>A diferencia de las herramientas de compresión convencionales, ForZip implementa un flujo de trabajo forense que calcula los hashes criptográficos (MD5, SHA-1, SHA-256, SHA-512) de los archivos originales durante su inclusión en el contenedor ZIP (un solo pase), asegurando la trazabilidad desde el origen.</p>
-                <p>Soporta cifrado fuerte <strong>AES-256</strong>, generación de informes forenses y de un manifiesto legible por máquina, firma digital opcional (CMS/PKCS#7) y verificación de evidencia re-hasheando el contenido del ZIP contra su manifiesto.</p>
+                <p>Soporta cifrado fuerte <strong>AES-256</strong>, división en volúmenes, generación de informes forenses y de un manifiesto legible por máquina, firma digital opcional (CMS/PKCS#7) con sellado de tiempo RFC 3161, y verificación de evidencia re-hasheando el contenido del ZIP contra su manifiesto.</p>
+                <p>Es portable: un único ejecutable, sin instalador, sin permisos de administrador y sin telemetría. Esta misma guía es autocontenida y no realiza ninguna petición de red.</p>
             </div>
 
             <div class="card">
@@ -56,25 +66,72 @@
                     <li><strong>Empaquetar (Comprimir):</strong>
                         <ul>
                             <li>Arrastre archivos o carpetas al área de trabajo o use el botón de selección.</li>
-                            <li>Defina el <strong>Nivel de compresión</strong> (desde Almacenamiento hasta Ultra).</li>
-                            <li>Opcionalmente, active el <strong>Cifrado AES-256</strong> y genere una contraseña segura.</li>
-                            <li>Seleccione los <strong>Algoritmos de hash</strong> deseados para documentar la evidencia.</li>
-                            <li>Presione "Empaquetar". El hasheado y la compresión ocurren en un solo pase, con feedback en tiempo real.</li>
+                            <li>El <strong>modo Simple</strong> aplica los valores forenses recomendados (SHA-256 por archivo, informe, manifiesto y sidecar) detrás de un único botón. El <strong>modo Avanzado</strong> expone todos los controles. La elección se recuerda entre sesiones.</li>
+                            <li>Defina el <strong>nivel de compresión</strong> (de Almacenamiento a Máxima) y los <strong>algoritmos de hash</strong> con los que quiere documentar la evidencia.</li>
+                            <li>Opcionalmente active el <strong>cifrado AES-256</strong> y genere una contraseña segura.</li>
+                            <li>Opcionalmente divida la salida en <strong>volúmenes</strong> de tamaño fijo (<code>.001</code>, <code>.002</code>…), al estilo 7-Zip. Cada volumen se hashea por separado en el manifiesto, además del hash global del archivo lógico.</li>
+                            <li>Presione <strong>Empaquetar</strong>. El hasheado, la compresión y la división ocurren en un solo pase, con progreso real por bytes.</li>
+                            <li>Al terminar, una pantalla de resultado explica cada artefacto generado y muestra la huella SHA-256 global, con acciones para copiarla o abrir la carpeta.</li>
                         </ul>
                     </li>
                     <li><strong>Extraer:</strong>
                         <ul>
-                            <li>Seleccione el archivo ZIP origen y la carpeta de destino.</li>
-                            <li>Ingrese la contraseña si el archivo está cifrado.</li>
-                            <li>Durante la extracción, se muestra el progreso y se registran los eventos en la bitácora.</li>
+                            <li>Seleccione el archivo ZIP origen y la carpeta de destino. Si la evidencia está dividida, basta con indicar el volumen <code>.001</code>: el resto se detecta y se reensambla solo.</li>
+                            <li>Ingrese la contraseña si el contenedor está cifrado.</li>
+                            <li>Durante la extracción se muestra el progreso y se registran los eventos en la bitácora.</li>
                         </ul>
                     </li>
-                    <li><strong>Informe Forense:</strong> Al finalizar un empaquetado con hashes, el sistema solicita los datos del operador para generar el <code>.report.txt</code> y el <code>.manifest.json</code> (y, opcionalmente, firmar el manifiesto). El informe documenta metadatos, tiempos, hashes, rutas de origen y marcas temporales de cada archivo.</li>
-                    <li><strong>Verificar:</strong> Permite cargar un informe (verifica su <code>.sha256</code>) o un manifiesto <code>.manifest.json</code> para re-hashear la evidencia del ZIP, emitiendo un veredicto archivo por archivo y validando la firma digital cuando existe.</li>
-                    <li><strong>Hash Batch:</strong> Utilidad para calcular múltiples hashes de archivos de forma masiva sin necesidad de comprimirlos.</li>
+                    <li><strong>Hash Batch:</strong> calcula hashes de múltiples archivos en disco sin comprimirlos, ideal para inventarios rápidos de evidencia. Permite exportar el resultado como informe forense.</li>
+                    <li><strong>Verificar:</strong> cargue un informe <code>.report.txt</code> (se valida contra su <code>.sha256</code>) o un <code>.manifest.json</code> para re-hashear la evidencia del ZIP. ForZip emite un veredicto archivo por archivo (correcto / alterado / faltante / añadido), verifica el hash global y, si el manifiesto está firmado, valida la firma digital, el firmante y el sello de tiempo. En evidencia dividida el veredicto se emite además volumen por volumen.</li>
+                    <li><strong>Generador de contraseñas:</strong> produce contraseñas de alta entropía con un generador criptográficamente seguro. La longitud es configurable con un mínimo de <strong>8 caracteres</strong> y se puede escribir o ajustar con el deslizador. Los caracteres visualmente ambiguos (<code>0 O o I l 1 |</code>) se excluyen <strong>siempre</strong>: una contraseña forense se transcribe y se dicta a mano, y un carácter que no se puede leer sin ambigüedad es un error de transcripción esperando ocurrir. El indicador de entropía ya descuenta esos caracteres del alfabeto.</li>
                 </ol>
+            </div>
+
+            <div class="card">
+                <h2>Integración con el menú contextual de Windows</h2>
+                <p>Desde <strong>Ajustes → Integración</strong> puede agregar ForZip al menú del clic derecho del Explorador. Es portable: se registra bajo <code>HKCU</code>, no instala nada, no requiere administrador y se puede quitar en cualquier momento. Si mueve el ejecutable (o cambia la letra del pendrive), ForZip repara el registro solo al abrirse.</p>
+                <p>Según lo que seleccione, el submenú ofrece <strong>Comprimir</strong>, <strong>Calcular hash</strong>, <strong>Extraer aquí</strong>, <strong>Extraer a subcarpeta</strong>, <strong>Extraer…</strong> y <strong>Verificar</strong>.</p>
+                <p><strong>Calcular hash</strong> no abre la aplicación completa: muestra una ventana liviana e independiente con el nombre, la ruta, el tamaño, la fecha de modificación y los hashes de cada archivo. Puede cambiar los algoritmos ahí mismo, copiar todo al portapapeles o exportar un informe <code>.txt</code>. Si selecciona varios archivos a la vez, todos se acumulan en una única ventana.</p>
+            </div>
+
+            <div class="card">
+                <h2>Artefactos generados</h2>
+                <p>Un empaquetado forense completo produce varios archivos que deben viajar <strong>juntos</strong>: sin ellos la evidencia no se puede verificar más adelante.</p>
+                <table>
+                    <tr><th>Archivo</th><th>Qué es</th></tr>
+                    <tr><td><code>.zip</code></td><td>El contenedor de la evidencia. Formato ZIP estándar, compatible con 7-Zip, WinRAR y el Explorador.</td></tr>
+                    <tr><td><code>.001</code>, <code>.002</code>…</td><td>Los volúmenes, si eligió dividir la salida. Se necesitan todos para reconstruir el contenedor.</td></tr>
+                    <tr><td><code>.report.txt</code></td><td>El informe forense legible: operador, caso, entorno, parámetros y el hash de cada archivo procesado.</td></tr>
+                    <tr><td><code>.manifest.json</code></td><td>La misma información en formato legible por máquina. Es lo que usa la verificación automática.</td></tr>
+                    <tr><td><code>.sha256</code></td><td>Huella externa del informe. Detecta que el informe se corrompió o se editó.</td></tr>
+                    <tr><td><code>.p7s</code></td><td>Firma digital desacoplada del manifiesto (CMS/PKCS#7), si firmó con su certificado.</td></tr>
+                </table>
                 <div class="note">
-                    <strong>Nota:</strong> ForZip utiliza <strong>Zip64</strong> de forma predeterminada para soportar contenedores de evidencia que superen los 4GB, asegurando compatibilidad con grandes volúmenes de datos forenses.
+                    <strong>Importante:</strong> el sidecar <code>.sha256</code>, por sí solo, detecta corrupción accidental, <em>no</em> manipulación maliciosa: quien edite el informe puede recalcularlo. Para que la manipulación sea criptográficamente evidente hay que <strong>firmar el manifiesto</strong> con un certificado X.509. El sellado de tiempo RFC 3161 agrega, además, una fecha certificada por un tercero.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Actualizaciones</h2>
+                <p>En <strong>Acerca de</strong> hay un botón <strong>Buscar actualizaciones</strong> que consulta cuál es la última versión publicada y, si hay una más reciente, muestra sus novedades y ofrece abrir la página de la publicación en el navegador. En <strong>Ajustes → General</strong> se puede pedir que la consulta se haga también al iniciar; viene <strong>desactivada</strong>.</p>
+                <p>Esa consulta es la única conexión de red que ForZip inicia por su cuenta. No envía ningún dato del equipo ni de la evidencia: es una petición de lectura a un recurso público.</p>
+                <div class="note">
+                    <strong>Por qué no se actualiza solo:</strong> el informe forense declara con qué versión se generó cada evidencia, y muchos laboratorios trabajan con herramientas validadas y congeladas. Que el binario cambie sin intervención podría dejarlo sin poder acreditar qué versión produjo un paquete, o violar su política de validación. Por eso ForZip avisa, pero la descarga y el reemplazo los decide y los hace el operador.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Modo línea de comandos</h2>
+                <p>El mismo ejecutable admite automatización y scripting. <code>ForZip.exe --help</code> lista todas las opciones.</p>
+                <pre><code>ForZip.exe zip -i "C:\Evidencia\Caso42" -o "C:\Salida\Caso42.zip" --hash sha256,sha512 --report "C:\Salida\Caso42.report.txt" --operator "J. Perez"
+ForZip.exe zip -i evidencia.dd -o evidencia.zip --hash sha256 --report r.txt --split 700M
+ForZip.exe unzip -i evidencia.zip.001 -o .\resultado
+ForZip.exe hash -i *.* --algo sha256,md5
+ForZip.exe verify -m evidencia.zip.manifest.json -z evidencia.zip
+ForZip.exe sign -m evidencia.zip.manifest.json -c operador.pfx -p clave -t http://timestamp.digicert.com
+ForZip.exe genpass -n 20 -s</code></pre>
+                <div class="note">
+                    <strong>Nota:</strong> ForZip utiliza <strong>Zip64</strong> de forma predeterminada para soportar contenedores de evidencia que superen los 4 GB, asegurando compatibilidad con grandes volúmenes de datos forenses.
                 </div>
             </div>
 
@@ -85,6 +142,7 @@
                     <li><strong>Avalonia UI</strong> — Framework de interfaz de usuario multiplataforma. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
                     <li><strong>CommunityToolkit.Mvvm</strong> — Arquitectura de la aplicación. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
                 </ul>
+                <p style="font-size:13px;color:#94A3B8;margin-top:16px">ForZip se distribuye bajo la Apache License 2.0. La lista completa de atribuciones está en el archivo <code>NOTICE</code>.</p>
             </div>
         </div>
 
@@ -94,7 +152,8 @@
                 <h2>Description</h2>
                 <p><strong>ForZip</strong> is a forensic compression and verification tool designed to ensure the integrity of digital evidence during packing and transportation.</p>
                 <p>Unlike conventional compression tools, ForZip implements a forensic workflow that computes cryptographic hashes (MD5, SHA-1, SHA-256, SHA-512) of the original files while including them in the ZIP container (a single pass), ensuring traceability from the source.</p>
-                <p>It supports strong <strong>AES-256</strong> encryption, forensic report and machine-readable manifest generation, optional digital signing (CMS/PKCS#7), and evidence verification by re-hashing the ZIP contents against its manifest.</p>
+                <p>It supports strong <strong>AES-256</strong> encryption, splitting into volumes, forensic report and machine-readable manifest generation, optional digital signing (CMS/PKCS#7) with RFC 3161 timestamping, and evidence verification by re-hashing the ZIP contents against its manifest.</p>
+                <p>It is portable: a single executable, no installer, no administrator rights and no telemetry. This guide is self-contained too and makes no network requests.</p>
             </div>
 
             <div class="card">
@@ -103,25 +162,72 @@
                     <li><strong>Pack (Compress):</strong>
                         <ul>
                             <li>Drag files or folders to the workspace or use the selection button.</li>
-                            <li>Set the <strong>Compression Level</strong> (from Store to Ultra).</li>
-                            <li>Optionally, enable <strong>AES-256 Encryption</strong> and generate a secure password.</li>
-                            <li>Select the desired <strong>Hash Algorithms</strong> to document the evidence.</li>
-                            <li>Press "Pack". Hashing and compression happen in a single pass, with real-time feedback.</li>
+                            <li><strong>Simple mode</strong> applies the recommended forensic defaults (SHA-256 per file, report, manifest and sidecar) behind a single button. <strong>Advanced mode</strong> exposes every control. Your choice is remembered across sessions.</li>
+                            <li>Set the <strong>compression level</strong> (from Store to Maximum) and the <strong>hash algorithms</strong> you want the evidence documented with.</li>
+                            <li>Optionally enable <strong>AES-256 encryption</strong> and generate a secure password.</li>
+                            <li>Optionally split the output into fixed-size <strong>volumes</strong> (<code>.001</code>, <code>.002</code>…), 7-Zip style. Each volume is hashed individually in the manifest, in addition to the global hash of the logical archive.</li>
+                            <li>Press <strong>Pack</strong>. Hashing, compression and splitting happen in a single pass, with real progress by bytes.</li>
+                            <li>When it finishes, a result screen explains every generated artifact and shows the global SHA-256 fingerprint, with actions to copy it or open the folder.</li>
                         </ul>
                     </li>
                     <li><strong>Extract:</strong>
                         <ul>
-                            <li>Select the source ZIP file and the destination folder.</li>
-                            <li>Enter the password if the file is encrypted.</li>
+                            <li>Select the source ZIP file and the destination folder. If the evidence is split, just point at the <code>.001</code> volume: the rest is detected and reassembled automatically.</li>
+                            <li>Enter the password if the container is encrypted.</li>
                             <li>During extraction, progress is displayed and events are recorded in the log.</li>
                         </ul>
                     </li>
-                    <li><strong>Forensic Report:</strong> Upon completing a packing operation with hashes, the system requests operator details to generate the <code>.report.txt</code> and the <code>.manifest.json</code> (and, optionally, sign the manifest). The report documents metadata, timestamps, hashes, source paths, and modification times for every processed file.</li>
-                    <li><strong>Verify:</strong> Load a report (verifies its <code>.sha256</code>) or a <code>.manifest.json</code> to re-hash the ZIP evidence, issuing a per-file verdict and validating the digital signature when present.</li>
-                    <li><strong>Hash Batch:</strong> Utility to compute multiple hashes for files in bulk without the need for compression.</li>
+                    <li><strong>Hash Batch:</strong> computes hashes for multiple files on disk without compressing them, ideal for quick evidence inventories. The result can be exported as a forensic report.</li>
+                    <li><strong>Verify:</strong> load a <code>.report.txt</code> report (validated against its <code>.sha256</code>) or a <code>.manifest.json</code> to re-hash the ZIP evidence. ForZip issues a per-file verdict (OK / altered / missing / extra), checks the global hash and, if the manifest is signed, validates the digital signature, the signer and the timestamp. For split evidence, a per-volume verdict is issued as well.</li>
+                    <li><strong>Password Generator:</strong> produces high-entropy passwords with a cryptographically secure generator. Length is configurable with a minimum of <strong>8 characters</strong> and can be typed or set with the slider. Visually ambiguous characters (<code>0 O o I l 1 |</code>) are <strong>always</strong> excluded: a forensic password gets transcribed and dictated by hand, and a character that cannot be read unambiguously is a transcription error waiting to happen. The entropy indicator already accounts for the reduced alphabet.</li>
                 </ol>
+            </div>
+
+            <div class="card">
+                <h2>Windows Context-Menu Integration</h2>
+                <p>From <strong>Settings → Integration</strong> you can add ForZip to the Explorer right-click menu. It is portable: registered under <code>HKCU</code>, it installs nothing, requires no administrator rights and can be removed at any time. If you move the executable (or the USB drive letter changes), ForZip repairs the registration by itself on startup.</p>
+                <p>Depending on what you select, the submenu offers <strong>Compress</strong>, <strong>Calculate hash</strong>, <strong>Extract here</strong>, <strong>Extract to subfolder</strong>, <strong>Extract…</strong> and <strong>Verify</strong>.</p>
+                <p><strong>Calculate hash</strong> does not open the full application: it shows a lightweight standalone window with the name, path, size, modification date and hashes of each file. You can switch algorithms right there, copy everything to the clipboard or export a <code>.txt</code> report. If you select several files at once, they all accumulate in a single window.</p>
+            </div>
+
+            <div class="card">
+                <h2>Generated Artifacts</h2>
+                <p>A complete forensic packaging run produces several files that must travel <strong>together</strong>: without them the evidence cannot be verified later.</p>
+                <table>
+                    <tr><th>File</th><th>What it is</th></tr>
+                    <tr><td><code>.zip</code></td><td>The evidence container. Standard ZIP format, compatible with 7-Zip, WinRAR and Explorer.</td></tr>
+                    <tr><td><code>.001</code>, <code>.002</code>…</td><td>The volumes, if you chose to split the output. All of them are needed to rebuild the container.</td></tr>
+                    <tr><td><code>.report.txt</code></td><td>The human-readable forensic report: operator, case, environment, parameters and the hash of every processed file.</td></tr>
+                    <tr><td><code>.manifest.json</code></td><td>The same information in machine-readable form. This is what automated verification uses.</td></tr>
+                    <tr><td><code>.sha256</code></td><td>External fingerprint of the report. Detects that the report was corrupted or edited.</td></tr>
+                    <tr><td><code>.p7s</code></td><td>Detached digital signature of the manifest (CMS/PKCS#7), if you signed with your certificate.</td></tr>
+                </table>
                 <div class="note">
-                    <strong>Note:</strong> ForZip uses <strong>Zip64</strong> by default to support evidence containers exceeding 4GB, ensuring compatibility with large forensic data volumes.
+                    <strong>Important:</strong> the <code>.sha256</code> sidecar on its own detects accidental corruption, <em>not</em> malicious tampering: anyone who edits the report can recompute it. To make tampering cryptographically evident you must <strong>sign the manifest</strong> with an X.509 certificate. RFC 3161 timestamping additionally adds a date certified by a third party.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Updates</h2>
+                <p>In <strong>About</strong> there is a <strong>Check for updates</strong> button that queries the latest published version and, if a newer one exists, shows its release notes and offers to open the release page in your browser. Under <strong>Settings → General</strong> you can ask for the check to run at startup too; it is <strong>disabled</strong> by default.</p>
+                <p>That query is the only network connection ForZip initiates on its own. It sends no data about the machine or the evidence: it is a read request to a public resource.</p>
+                <div class="note">
+                    <strong>Why it does not update itself:</strong> the forensic report declares which version generated each piece of evidence, and many labs work with validated, frozen tools. A binary that changes without intervention could leave you unable to attest which version produced a package, or breach your validation policy. So ForZip tells you, but downloading and replacing is decided and performed by the operator.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Command-Line Mode</h2>
+                <p>The same executable supports automation and scripting. <code>ForZip.exe --help</code> lists every option.</p>
+                <pre><code>ForZip.exe zip -i "C:\Evidence\Case42" -o "C:\Output\Case42.zip" --hash sha256,sha512 --report "C:\Output\Case42.report.txt" --operator "J. Perez"
+ForZip.exe zip -i evidence.dd -o evidence.zip --hash sha256 --report r.txt --split 700M
+ForZip.exe unzip -i evidence.zip.001 -o .\output
+ForZip.exe hash -i *.* --algo sha256,md5
+ForZip.exe verify -m evidence.zip.manifest.json -z evidence.zip
+ForZip.exe sign -m evidence.zip.manifest.json -c operator.pfx -p secret -t http://timestamp.digicert.com
+ForZip.exe genpass -n 20 -s</code></pre>
+                <div class="note">
+                    <strong>Note:</strong> ForZip uses <strong>Zip64</strong> by default to support evidence containers exceeding 4 GB, ensuring compatibility with large forensic data volumes.
                 </div>
             </div>
 
@@ -132,6 +238,7 @@
                     <li><strong>Avalonia UI</strong> — Cross-platform UI framework. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
                     <li><strong>CommunityToolkit.Mvvm</strong> — Application architecture. (<strong style="color:#E2E8F0">MIT License</strong>)</li>
                 </ul>
+                <p style="font-size:13px;color:#94A3B8;margin-top:16px">ForZip is distributed under the Apache License 2.0. The full attribution list lives in the <code>NOTICE</code> file.</p>
             </div>
         </div>
 

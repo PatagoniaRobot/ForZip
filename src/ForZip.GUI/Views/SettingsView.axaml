@@ -52,6 +52,16 @@
                       Margin="6,0,0,0"/>
               <TextBox Text="{Binding OutputDirectory}"/>
             </DockPanel>
+
+            <StackPanel Spacing="4" Margin="0,8,0,0">
+              <CheckBox Content="{Binding LabelCheckUpdates}"
+                        IsChecked="{Binding CheckForUpdatesOnStartup}"/>
+              <TextBlock Text="{Binding LabelCheckUpdatesHint}"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         FontSize="11"
+                         TextWrapping="Wrap"
+                         Margin="26,0,0,0"/>
+            </StackPanel>
           </StackPanel>
         </TabItem>
 

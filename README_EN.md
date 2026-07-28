@@ -16,9 +16,9 @@
 
 1.  **Pack (Compress)**: The system's core. Allows adding files and folders, selecting hash algorithms (MD5, SHA-1, SHA-256, SHA-512), defining compression levels, and applying encryption.
 2.  **Extract**: Secure decompression of ZIP files, with support for encrypted containers and detailed event logging.
-3.  **Hash Batch**: Mass hash calculation tool for files on disk without needing to pack them, ideal for quick evidence inventories.
+3.  **Hash Batch**: Mass hash calculation tool for files on disk without needing to pack them, ideal for quick evidence inventories. From the Explorer context menu, *Calculate hash* instead opens a lightweight standalone window (7-Zip style) with name, path, size, timestamp and hashes, ready to copy to the clipboard or export as a `.txt` report, without launching the full application.
 4.  **Verify**: Audit engine that checks a report's integrity (against its `.sha256`) or re-hashes a ZIP container against its manifest, also validating the digital signature when present.
-5.  **Password Generator**: Integrated utility to create high-entropy passwords suitable for protecting sensitive evidence.
+5.  **Password Generator**: Integrated utility to create high-entropy passwords suitable for protecting sensitive evidence. Length is configurable (minimum 8 characters) and visually ambiguous characters (`0 O o I l 1 |`) are always excluded, so the password can be transcribed or dictated without errors.
 
 ## Quick Start Guide
 

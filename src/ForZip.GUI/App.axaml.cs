@@ -30,6 +30,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using ForZip.Core.Interfaces;
 using ForZip.Core.Services;
+using ForZip.Core.Shell;
 using ForZip.GUI.Services;
 using ForZip.GUI.ViewModels;
 using ForZip.GUI.Views;
@@ -50,83 +51,153 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Composition root: instanciamos servicios con sus dependencias resueltas a mano
-            var localization = new LocalizationService();
-            var logService = new LogService
+            // "Calcular hash" desde el menú contextual no levanta la aplicación entera: abre
+            // solo su ventanita de resultados, como hace 7-Zip.
+            if (Program.IsQuickHashMode(desktop.Args))
             {
-                // Marshalar las mutaciones de la colección al hilo de UI de Avalonia
-                UiDispatcher = action => Avalonia.Threading.Dispatcher.UIThread.Post(action)
-            };
-            var hashService = new HashService();
-            var passwordService = new PasswordService();
-            var zipService = new ZipService(hashService);
-            var reportService = new ReportService(localization);
-            var signatureService = new SignatureService();
-            var verificationService = new VerificationService(hashService, signatureService);
-            var configService = new ConfigService();
-            var themeService = new ThemeService();
-            var operatorDialog = new OperatorDialogService();
-            var shellIntegration = new ShellIntegrationService(localization);
-
-            var mainViewModel = new MainWindowViewModel(
-                zipService, hashService, passwordService,
-                reportService, verificationService, signatureService, configService, localization, themeService,
-                logService, operatorDialog, shellIntegration);
-
-            UpdateResources(localization);
-
-            // Las etiquetas del menú contextual viven en el registro con el idioma del momento
-            // en que se registró: al cambiar el idioma de la app hay que reescribirlas.
-            localization.LanguageChanged += () => RefreshShellLabels(shellIntegration);
-
-            // Si la app fue invocada desde el menú contextual del Explorador (verbo + ruta),
-            // abrimos la vista correspondiente con el/los archivo(s) ya cargados.
-            mainViewModel.HandleShellRequest(ForZip.Core.Shell.ShellArgs.Parse(desktop.Args));
-
-            var mainWindow = new MainWindow
+                StartQuickHashMode(desktop);
+            }
+            else
             {
-                DataContext = mainViewModel
-            };
-            desktop.MainWindow = mainWindow;
-
-            // Al abrir la ventana: reparar una integración con ruta muerta (exe movido /
-            // otra letra de USB) u ofrecer la integración la primera vez en esta PC.
-            mainWindow.Opened += async (_, _) =>
-            {
-                try
-                {
-                    await OfferOrRepairShellIntegrationAsync(shellIntegration, logService, localization, mainWindow);
-                }
-                catch
-                {
-                    // La integración del shell nunca debe afectar el arranque de la app.
-                }
-            };
-
-            // Instancia primaria: escucha reenvíos de otras invocaciones (multi-selección del
-            // menú contextual) y los rutea a esta misma ventana, trayéndola al frente.
-            SingleInstance?.StartServer(forwardedArgs =>
-                Dispatcher.UIThread.Post(() =>
-                {
-                    try
-                    {
-                        mainViewModel.HandleShellRequest(ForZip.Core.Shell.ShellArgs.Parse(forwardedArgs));
-                        if (mainWindow.WindowState == WindowState.Minimized)
-                        {
-                            mainWindow.WindowState = WindowState.Normal;
-                        }
-                        mainWindow.Activate();
-                    }
-                    catch
-                    {
-                        // No dejar que un reenvío malformado afecte a la app en ejecución.
-                    }
-                }));
-
-            desktop.Exit += (_, _) => SingleInstance?.Dispose();
+                StartFullApplication(desktop);
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Modo "hash rápido": una única ventana autónoma, sin barra lateral, sin bitácora y sin
+    /// la oferta de integración con el Explorador (quien llega por acá ya la tiene integrada).
+    /// </summary>
+    private void StartQuickHashMode(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var localization = new LocalizationService();
+        var configService = new ConfigService();
+
+        var config = configService.Load();
+        localization.SetLanguage(config.Language);
+        new ThemeService().ApplyTheme(config.Theme);
+        UpdateResources(localization);
+
+        var viewModel = new QuickHashViewModel(
+            new HashService(), new ReportService(localization), configService, localization);
+
+        var window = new QuickHashWindow { DataContext = viewModel };
+        desktop.MainWindow = window;
+
+        var request = ShellArgs.Parse(desktop.Args);
+        if (request != null)
+        {
+            viewModel.AddPaths(request.Paths);
+        }
+
+        // Multi-selección: el Explorador lanza un proceso por archivo. Los que no ganaron el
+        // mutex reenvían sus rutas acá y esta ventana las acumula.
+        SingleInstance?.StartServer(forwardedArgs =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                try
+                {
+                    var forwarded = ShellArgs.Parse(forwardedArgs);
+                    if (forwarded?.Verb != ShellVerb.Hash)
+                    {
+                        return;
+                    }
+
+                    viewModel.AddPaths(forwarded.Paths);
+                    if (window.WindowState == WindowState.Minimized)
+                    {
+                        window.WindowState = WindowState.Normal;
+                    }
+                    window.Activate();
+                }
+                catch
+                {
+                    // No dejar que un reenvío malformado afecte a la ventana en uso.
+                }
+            }));
+
+        desktop.Exit += (_, _) => SingleInstance?.Dispose();
+    }
+
+    private void StartFullApplication(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        // Composition root: instanciamos servicios con sus dependencias resueltas a mano
+        var localization = new LocalizationService();
+        var logService = new LogService
+        {
+            // Marshalar las mutaciones de la colección al hilo de UI de Avalonia
+            UiDispatcher = action => Avalonia.Threading.Dispatcher.UIThread.Post(action)
+        };
+        var hashService = new HashService();
+        var passwordService = new PasswordService();
+        var zipService = new ZipService(hashService);
+        var reportService = new ReportService(localization);
+        var signatureService = new SignatureService();
+        var verificationService = new VerificationService(hashService, signatureService);
+        var configService = new ConfigService();
+        var themeService = new ThemeService();
+        var operatorDialog = new OperatorDialogService();
+        var shellIntegration = new ShellIntegrationService(localization);
+        var updateService = new UpdateService();
+
+        var mainViewModel = new MainWindowViewModel(
+            zipService, hashService, passwordService,
+            reportService, verificationService, signatureService, configService, localization, themeService,
+            logService, operatorDialog, shellIntegration, updateService);
+
+        UpdateResources(localization);
+
+        // Las etiquetas del menú contextual viven en el registro con el idioma del momento
+        // en que se registró: al cambiar el idioma de la app hay que reescribirlas.
+        localization.LanguageChanged += () => RefreshShellLabels(shellIntegration);
+
+        // Si la app fue invocada desde el menú contextual del Explorador (verbo + ruta),
+        // abrimos la vista correspondiente con el/los archivo(s) ya cargados.
+        mainViewModel.HandleShellRequest(ShellArgs.Parse(desktop.Args));
+
+        var mainWindow = new MainWindow
+        {
+            DataContext = mainViewModel
+        };
+        desktop.MainWindow = mainWindow;
+
+        // Al abrir la ventana: reparar una integración con ruta muerta (exe movido /
+        // otra letra de USB) u ofrecer la integración la primera vez en esta PC.
+        mainWindow.Opened += async (_, _) =>
+        {
+            try
+            {
+                await OfferOrRepairShellIntegrationAsync(shellIntegration, logService, localization, mainWindow);
+            }
+            catch
+            {
+                // La integración del shell nunca debe afectar el arranque de la app.
+            }
+        };
+
+        // Instancia primaria: escucha reenvíos de otras invocaciones (multi-selección del
+        // menú contextual) y los rutea a esta misma ventana, trayéndola al frente.
+        SingleInstance?.StartServer(forwardedArgs =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                try
+                {
+                    mainViewModel.HandleShellRequest(ShellArgs.Parse(forwardedArgs));
+                    if (mainWindow.WindowState == WindowState.Minimized)
+                    {
+                        mainWindow.WindowState = WindowState.Normal;
+                    }
+                    mainWindow.Activate();
+                }
+                catch
+                {
+                    // No dejar que un reenvío malformado afecte a la app en ejecución.
+                }
+            }));
+
+        desktop.Exit += (_, _) => SingleInstance?.Dispose();
     }
 
     private void UpdateResources(ILocalizationService localization)

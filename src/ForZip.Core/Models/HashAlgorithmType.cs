@@ -32,3 +32,25 @@ public enum HashAlgorithmType
     SHA256,
     SHA512
 }
+
+public static class HashAlgorithmNames
+{
+    /// <summary>Orden canónico de presentación: del más débil al más fuerte.</summary>
+    public static readonly HashAlgorithmType[] DisplayOrder =
+    {
+        HashAlgorithmType.MD5,
+        HashAlgorithmType.SHA1,
+        HashAlgorithmType.SHA256,
+        HashAlgorithmType.SHA512
+    };
+
+    /// <summary>Nombre con guion tal como se escribe en informes y en la interfaz.</summary>
+    public static string Display(HashAlgorithmType algorithm) => algorithm switch
+    {
+        HashAlgorithmType.MD5 => "MD5",
+        HashAlgorithmType.SHA1 => "SHA-1",
+        HashAlgorithmType.SHA256 => "SHA-256",
+        HashAlgorithmType.SHA512 => "SHA-512",
+        _ => algorithm.ToString()
+    };
+}

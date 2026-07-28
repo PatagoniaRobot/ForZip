@@ -41,4 +41,11 @@ public class AppConfig
     /// TSA (RFC 3161) usada para el sellado de tiempo de la firma del manifiesto.
     /// </summary>
     public string TimestampServerUrl { get; set; } = "http://timestamp.digicert.com";
+
+    /// <summary>
+    /// Consultar al iniciar si hay una versión más reciente publicada. Desactivado por defecto:
+    /// ForZip no debe iniciar tráfico de red que el operador no haya pedido, y en un laboratorio
+    /// aislado la consulta no haría más que fallar.
+    /// </summary>
+    public bool CheckForUpdatesOnStartup { get; set; } = false;
 }
