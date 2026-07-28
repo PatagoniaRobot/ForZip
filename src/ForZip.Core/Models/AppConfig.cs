@@ -48,4 +48,16 @@ public class AppConfig
     /// aislado la consulta no haría más que fallar.
     /// </summary>
     public bool CheckForUpdatesOnStartup { get; set; } = false;
+
+    /// <summary>
+    /// Versión desde la que se acaba de actualizar. La escribe el actualizador antes de
+    /// relanzar y la consume el arranque siguiente para mostrar qué cambió; después se limpia.
+    /// </summary>
+    public string? UpdatedFromVersion { get; set; }
+
+    /// <summary>
+    /// Notas de la publicación instalada, guardadas antes de reiniciar para poder mostrarlas
+    /// aunque el equipo ya no tenga conexión.
+    /// </summary>
+    public string? UpdatedReleaseNotes { get; set; }
 }

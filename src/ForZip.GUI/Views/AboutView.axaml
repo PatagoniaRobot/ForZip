@@ -77,21 +77,33 @@
                     Command="{Binding CheckUpdatesCommand}"
                     IsEnabled="{Binding !IsCheckingUpdates}"
                     Padding="16,8"/>
-            <Button Content="{Binding ButtonOpenRelease}"
-                    Command="{Binding OpenReleasePageCommand}"
-                    IsVisible="{Binding IsUpdateAvailable}"
+            <Button Content="{Binding ButtonInstallUpdate}"
+                    Command="{Binding InstallUpdateCommand}"
+                    IsVisible="{Binding CanInstallUpdate}"
+                    IsEnabled="{Binding !IsBusy}"
                     Background="{DynamicResource AccentBrush}"
                     Foreground="White"
                     Padding="16,8"/>
+            <Button Content="{Binding ButtonOpenRelease}"
+                    Command="{Binding OpenReleasePageCommand}"
+                    IsVisible="{Binding IsUpdateAvailable}"
+                    Padding="16,8"/>
           </StackPanel>
+
+          <ProgressBar Minimum="0" Maximum="100"
+                       Value="{Binding UpdateProgress}"
+                       IsVisible="{Binding IsUpdating}"
+                       Height="6"
+                       Foreground="{DynamicResource ProgressFillBrush}"
+                       Background="{DynamicResource ProgressBgBrush}"/>
 
           <TextBlock Text="{Binding UpdateStatusMessage}"
                      Foreground="{DynamicResource TextSecondaryBrush}"
                      FontSize="12"
                      TextWrapping="Wrap"/>
 
-          <StackPanel Spacing="4" IsVisible="{Binding HasReleaseNotes}">
-            <TextBlock Text="{Binding LabelReleaseNotes}"
+          <StackPanel Spacing="4" IsVisible="{Binding HasNotes}">
+            <TextBlock Text="{Binding NotesHeading}"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        FontSize="12"
                        FontWeight="SemiBold"

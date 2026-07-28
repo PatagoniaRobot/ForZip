@@ -37,11 +37,19 @@ public enum UpdateCheckStatus
     Failed
 }
 
+/// <summary>Un archivo adjunto a la publicación (el ejecutable, o su <c>.sha256</c>).</summary>
+public sealed class UpdateAsset
+{
+    public required string Name { get; init; }
+    public required string DownloadUrl { get; init; }
+    public long Size { get; init; }
+}
+
 /// <summary>
-/// Resultado de consultar la última publicación de ForZip. Es solo informativo: la descarga y
-/// la instalación quedan en manos del operador. Una herramienta forense no debe reemplazar su
-/// propio binario sin que la persona lo decida, porque el informe declara con qué versión se
-/// generó cada evidencia y muchos laboratorios trabajan con versiones validadas y congeladas.
+/// Resultado de consultar la última publicación de ForZip. Nunca dispara la instalación por su
+/// cuenta: descargar y reemplazar el binario es siempre una acción que el operador pide, porque
+/// el informe declara con qué versión se generó cada evidencia y muchos laboratorios trabajan
+/// con versiones validadas y congeladas.
 /// </summary>
 public sealed class UpdateCheckResult
 {
@@ -61,4 +69,21 @@ public sealed class UpdateCheckResult
 
     /// <summary>Detalle del fallo cuando <see cref="Status"/> es <see cref="UpdateCheckStatus.Failed"/>.</summary>
     public string? ErrorMessage { get; init; }
+
+    /// <summary>Archivos adjuntos a la publicación.</summary>
+    public IReadOnlyList<UpdateAsset> Assets { get; init; } = Array.Empty<UpdateAsset>();
+
+    /// <summary>
+    /// Busca el adjunto que corresponde a un ejecutable dado. Se compara por nombre exacto
+    /// (sin distinguir mayúsculas) contra el nombre del archivo en ejecución: así una copia
+    /// llamada <c>ForZip.exe</c> nunca se actualiza con el binario de la CLI, y una publicación
+    /// que renombró sus adjuntos simplemente no ofrece actualización en vez de instalar
+    /// cualquier cosa.
+    /// </summary>
+    public UpdateAsset? FindAsset(string fileName)
+        => Assets.FirstOrDefault(a => string.Equals(a.Name, fileName, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Busca el <c>.sha256</c> que acompaña a un adjunto.</summary>
+    public UpdateAsset? FindChecksumFor(string fileName)
+        => FindAsset(fileName + ".sha256");
 }

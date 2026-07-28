@@ -36,6 +36,21 @@ public interface IUpdateService
     /// </summary>
     Task<UpdateCheckResult> CheckAsync(CancellationToken ct);
 
+    /// <summary>
+    /// Descarga <paramref name="asset"/> a <paramref name="destinationPath"/> y verifica su
+    /// SHA-256 contra <paramref name="checksumAsset"/>.
+    /// <para/>
+    /// Si no hay <c>.sha256</c> publicado, o si la huella no coincide, el archivo descargado se
+    /// descarta y el resultado NO queda verificado: quien llame no debe instalar nada salvo que
+    /// <see cref="UpdateDownloadResult.IsVerified"/> sea verdadero.
+    /// </summary>
+    Task<UpdateDownloadResult> DownloadAndVerifyAsync(
+        UpdateAsset asset,
+        UpdateAsset? checksumAsset,
+        string destinationPath,
+        IProgress<double>? progress,
+        CancellationToken ct);
+
     /// <summary>Página de publicaciones, como destino de respaldo si no hay una URL puntual.</summary>
     string ReleasesPageUrl { get; }
 }

@@ -94,6 +94,7 @@ public class UpdateService : IUpdateService
         string? tag;
         string? notes;
         string? url;
+        IReadOnlyList<UpdateAsset> assets;
 
         try
         {
@@ -108,6 +109,7 @@ public class UpdateService : IUpdateService
             tag = ReadString(root, "tag_name");
             notes = ReadString(root, "body");
             url = ReadString(root, "html_url");
+            assets = ParseAssets(root);
         }
         catch (JsonException ex)
         {
@@ -128,9 +130,190 @@ public class UpdateService : IUpdateService
             CurrentVersion = AppInfo.Version,
             LatestVersion = latestText,
             ReleaseNotes = string.IsNullOrWhiteSpace(notes) ? null : notes!.Trim(),
-            ReleaseUrl = string.IsNullOrWhiteSpace(url) ? ReleasesPage : url
+            ReleaseUrl = string.IsNullOrWhiteSpace(url) ? ReleasesPage : url,
+            Assets = assets
         };
     }
+
+    /// <summary>Lee el arreglo <c>assets</c> de la publicación, salteando entradas incompletas.</summary>
+    private static IReadOnlyList<UpdateAsset> ParseAssets(JsonElement root)
+    {
+        if (!root.TryGetProperty("assets", out var array) || array.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<UpdateAsset>();
+        }
+
+        var assets = new List<UpdateAsset>();
+        foreach (var item in array.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var name = ReadString(item, "name");
+            var downloadUrl = ReadString(item, "browser_download_url");
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(downloadUrl))
+            {
+                continue;
+            }
+
+            long size = 0;
+            if (item.TryGetProperty("size", out var sizeElement) &&
+                sizeElement.ValueKind == JsonValueKind.Number)
+            {
+                sizeElement.TryGetInt64(out size);
+            }
+
+            assets.Add(new UpdateAsset { Name = name!, DownloadUrl = downloadUrl!, Size = size });
+        }
+
+        return assets;
+    }
+
+    public async Task<UpdateDownloadResult> DownloadAndVerifyAsync(
+        UpdateAsset asset,
+        UpdateAsset? checksumAsset,
+        string destinationPath,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
+        // Sin huella publicada no se instala nada. Es la única defensa contra que una cuenta
+        // comprometida —o una descarga manipulada en tránsito— reemplace el binario de un perito.
+        if (checksumAsset == null)
+        {
+            return new UpdateDownloadResult
+            {
+                Status = UpdateDownloadStatus.ChecksumMissing,
+                ErrorMessage = $"La publicación no adjunta {asset.Name}.sha256."
+            };
+        }
+
+        string? expected;
+        try
+        {
+            var sidecar = await _httpClient.GetStringAsync(checksumAsset.DownloadUrl, ct);
+            expected = Sha256Sidecar.Extract(sidecar);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return DownloadFailed($"No se pudo descargar la huella publicada: {ex.Message}");
+        }
+
+        if (expected == null)
+        {
+            return new UpdateDownloadResult
+            {
+                Status = UpdateDownloadStatus.ChecksumMissing,
+                ErrorMessage = $"El archivo {checksumAsset.Name} no contiene un SHA-256 legible."
+            };
+        }
+
+        try
+        {
+            await DownloadToFileAsync(asset, destinationPath, progress, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            TryDelete(destinationPath);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            TryDelete(destinationPath);
+            return DownloadFailed(ex.Message);
+        }
+
+        var actual = await ComputeSha256Async(destinationPath, ct);
+
+        if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+        {
+            // Se borra: un binario que no verifica no debe quedar dando vueltas en el disco
+            // esperando que alguien lo ejecute por error.
+            TryDelete(destinationPath);
+            return new UpdateDownloadResult
+            {
+                Status = UpdateDownloadStatus.ChecksumMismatch,
+                ExpectedSha256 = expected,
+                ActualSha256 = actual
+            };
+        }
+
+        return new UpdateDownloadResult
+        {
+            Status = UpdateDownloadStatus.Verified,
+            FilePath = destinationPath,
+            ExpectedSha256 = expected,
+            ActualSha256 = actual
+        };
+    }
+
+    private async Task DownloadToFileAsync(
+        UpdateAsset asset, string destinationPath, IProgress<double>? progress, CancellationToken ct)
+    {
+        using var response = await _httpClient.GetAsync(
+            asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+
+        var total = response.Content.Headers.ContentLength ?? asset.Size;
+
+        var directory = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        await using var source = await response.Content.ReadAsStreamAsync(ct);
+        await using var target = new FileStream(
+            destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+        var buffer = new byte[81920];
+        long copied = 0;
+        int read;
+
+        while ((read = await source.ReadAsync(buffer, ct)) > 0)
+        {
+            await target.WriteAsync(buffer.AsMemory(0, read), ct);
+            copied += read;
+
+            if (progress != null && total > 0)
+            {
+                progress.Report(100.0 * copied / total);
+            }
+        }
+    }
+
+    private static async Task<string> ComputeSha256Async(string path, CancellationToken ct)
+    {
+        await using var stream = File.OpenRead(path);
+        var hash = await System.Security.Cryptography.SHA256.HashDataAsync(stream, ct);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Un temporal que no se puede borrar no debe convertir un fallo en una excepción.
+        }
+    }
+
+    private static UpdateDownloadResult DownloadFailed(string message) => new()
+    {
+        Status = UpdateDownloadStatus.DownloadFailed,
+        ErrorMessage = message
+    };
 
     private static string? ReadString(JsonElement root, string propertyName)
     {

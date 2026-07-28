@@ -47,7 +47,7 @@
             <div class="h-line1"><span style="font-weight:700">PATAGONIA</span> <span style="font-weight:400">ROBOT</span></div>
             <div class="h-line2"><strong style="color:#10B981">For</strong><strong style="color:#10B981">Zip</strong></div>
             <!-- La versión la controla ForZip.Core.AppInfo.Version; HelpPageTests falla si divergen. -->
-            <div class="h-line3">v1.3.0</div>
+            <div class="h-line3">v1.4.0</div>
         </div>
 
         <!-- ==================== ESPAÑOL ==================== -->
@@ -113,10 +113,17 @@
 
             <div class="card">
                 <h2>Actualizaciones</h2>
-                <p>En <strong>Acerca de</strong> hay un botón <strong>Buscar actualizaciones</strong> que consulta cuál es la última versión publicada y, si hay una más reciente, muestra sus novedades y ofrece abrir la página de la publicación en el navegador. En <strong>Ajustes → General</strong> se puede pedir que la consulta se haga también al iniciar; viene <strong>desactivada</strong>.</p>
+                <p>En <strong>Acerca de</strong> hay un botón <strong>Buscar actualizaciones</strong> que consulta cuál es la última versión publicada y, si hay una más reciente, muestra sus novedades. En <strong>Ajustes → General</strong> se puede pedir que la consulta se haga también al iniciar; viene <strong>desactivada</strong>.</p>
                 <p>Esa consulta es la única conexión de red que ForZip inicia por su cuenta. No envía ningún dato del equipo ni de la evidencia: es una petición de lectura a un recurso público.</p>
+                <p>Si hay una versión nueva, el botón <strong>Actualizar ahora</strong> hace todo el trabajo, en este orden:</p>
+                <ol>
+                    <li>Descarga el binario de la publicación.</li>
+                    <li><strong>Verifica su huella SHA-256</strong> contra el archivo <code>.sha256</code> publicado. Si no coincide, descarta la descarga y <strong>no instala nada</strong>.</li>
+                    <li>Recién entonces reemplaza el ejecutable y vuelve a abrir ForZip solo.</li>
+                </ol>
+                <p>El ejecutable anterior queda como <code>ForZip.exe.old</code> hasta el arranque siguiente: si la versión nueva diera problemas, alcanza con borrar el nuevo y sacarle el <code>.old</code> al viejo. Al reabrirse, ForZip muestra de qué versión venís y qué cambió.</p>
                 <div class="note">
-                    <strong>Por qué no se actualiza solo:</strong> el informe forense declara con qué versión se generó cada evidencia, y muchos laboratorios trabajan con herramientas validadas y congeladas. Que el binario cambie sin intervención podría dejarlo sin poder acreditar qué versión produjo un paquete, o violar su política de validación. Por eso ForZip avisa, pero la descarga y el reemplazo los decide y los hace el operador.
+                    <strong>Nunca se actualiza solo.</strong> La actualización siempre la pide el operador, con una confirmación de por medio, y nunca ocurre en segundo plano. Es una decisión deliberada: el informe forense declara con qué versión se generó cada evidencia, y muchos laboratorios trabajan con herramientas validadas y congeladas. Si ForZip corre desde un medio de solo lectura o una carpeta sin permisos, lo detecta y ofrece la descarga manual en vez de dejar la instalación a medias.
                 </div>
             </div>
 
@@ -209,10 +216,17 @@ ForZip.exe genpass -n 20 -s</code></pre>
 
             <div class="card">
                 <h2>Updates</h2>
-                <p>In <strong>About</strong> there is a <strong>Check for updates</strong> button that queries the latest published version and, if a newer one exists, shows its release notes and offers to open the release page in your browser. Under <strong>Settings → General</strong> you can ask for the check to run at startup too; it is <strong>disabled</strong> by default.</p>
+                <p>In <strong>About</strong> there is a <strong>Check for updates</strong> button that queries the latest published version and, if a newer one exists, shows its release notes. Under <strong>Settings → General</strong> you can ask for the check to run at startup too; it is <strong>disabled</strong> by default.</p>
                 <p>That query is the only network connection ForZip initiates on its own. It sends no data about the machine or the evidence: it is a read request to a public resource.</p>
+                <p>If a new version exists, the <strong>Update now</strong> button does the whole job, in this order:</p>
+                <ol>
+                    <li>Downloads the binary from the release.</li>
+                    <li><strong>Verifies its SHA-256 checksum</strong> against the published <code>.sha256</code> file. If it does not match, the download is discarded and <strong>nothing is installed</strong>.</li>
+                    <li>Only then does it replace the executable and reopen ForZip by itself.</li>
+                </ol>
+                <p>The previous executable is kept as <code>ForZip.exe.old</code> until the next startup: if the new version misbehaves, just delete the new one and drop the <code>.old</code> suffix from the old one. On reopening, ForZip shows which version you came from and what changed.</p>
                 <div class="note">
-                    <strong>Why it does not update itself:</strong> the forensic report declares which version generated each piece of evidence, and many labs work with validated, frozen tools. A binary that changes without intervention could leave you unable to attest which version produced a package, or breach your validation policy. So ForZip tells you, but downloading and replacing is decided and performed by the operator.
+                    <strong>It never updates itself.</strong> An update is always requested by the operator, with a confirmation step, and never happens in the background. This is deliberate: the forensic report declares which version generated each piece of evidence, and many labs work with validated, frozen tools. If ForZip runs from read-only media or a folder without permissions, it detects this and offers a manual download instead of leaving a half-finished install.
                 </div>
             </div>
 

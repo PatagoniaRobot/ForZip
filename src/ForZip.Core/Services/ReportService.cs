@@ -163,23 +163,7 @@ public class ReportService : IReportService
     }
 
     /// <summary>Extrae el primer hash SHA-256 (64 hex) que aparezca en el texto, en minúsculas.</summary>
-    private static string? ExtractSha256(string content)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return null;
-        }
-
-        foreach (var token in content.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (token.Length == 64 && token.All(Uri.IsHexDigit))
-            {
-                return token.ToLowerInvariant();
-            }
-        }
-
-        return null;
-    }
+    private static string? ExtractSha256(string content) => Sha256Sidecar.Extract(content);
 
     private string BuildReport(ReportData data, string language)
     {

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-28
+
+### Added
+- **In-app update installation, user-initiated and checksum-verified.** The *Check for updates* flow shipped in 1.3.0 could only point at the release page; it can now perform the update. Pressing *Update now* asks for confirmation (stating that ForZip will close and reopen), downloads the release binary matching the running executable's own file name, and **verifies its SHA-256 against the `.sha256` published alongside it**. Only on a match is anything touched — a mismatch or a missing checksum discards the download and installs nothing, because replacing a forensic tool's binary with something unverifiable would be blind remote code execution. The running executable is renamed to `<name>.old` (Windows permits renaming a running image), the new one takes its place, and ForZip relaunches itself; no helper process or batch script is involved, which also avoids the antivirus heuristics that pattern triggers. The `.old` copy survives until the next startup as a rollback, and is deleted then. After relaunch, ForZip opens About with a summary of which version it came from and the release notes, cached in `config.json` before restarting so they display even without a connection. Updating stays unavailable — with an explanatory message rather than a failure — when the release has no asset matching this executable or when its folder is not writable (read-only media, missing permissions), both normal situations for a portable forensic tool.
+
+### Changed
+- Sidecar `.sha256` parsing moved to a shared `Sha256Sidecar` helper in Core, used both by report verification and by the updater; `ReportService` now delegates to it.
+
 ## [1.3.0] - 2026-07-28
 
 ### Added

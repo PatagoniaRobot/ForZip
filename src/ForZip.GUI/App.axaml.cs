@@ -141,11 +141,17 @@ public partial class App : Application
         var operatorDialog = new OperatorDialogService();
         var shellIntegration = new ShellIntegrationService(localization);
         var updateService = new UpdateService();
+        var updateInstaller = new UpdateInstaller();
+        var updateDialog = new UpdateDialogService(localization);
+
+        // Si venimos de un reemplazo, el ejecutable anterior sigue en disco como .old. Ahora que
+        // aquel proceso ya murió, se puede borrar.
+        updateInstaller.CleanupPreviousVersion();
 
         var mainViewModel = new MainWindowViewModel(
             zipService, hashService, passwordService,
             reportService, verificationService, signatureService, configService, localization, themeService,
-            logService, operatorDialog, shellIntegration, updateService);
+            logService, operatorDialog, shellIntegration, updateService, updateInstaller, updateDialog);
 
         UpdateResources(localization);
 

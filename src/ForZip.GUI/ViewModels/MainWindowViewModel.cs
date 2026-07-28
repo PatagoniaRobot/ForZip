@@ -26,6 +26,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ForZip.Core.Interfaces;
+using ForZip.Core.Models;
 using ForZip.Core.Services;
 using ForZip.Core.Shell;
 using ForZip.GUI.Services;
@@ -79,7 +80,9 @@ public partial class MainWindowViewModel : ViewModelBase
         ILogService logService,
         IOperatorDialogService operatorDialog,
         IShellIntegrationService shellIntegration,
-        IUpdateService updateService) : base(localization)
+        IUpdateService updateService,
+        IUpdateInstaller updateInstaller,
+        IUpdateDialogService updateDialog) : base(localization)
     {
         _zipService = zipService;
         _hashService = hashService;
@@ -97,7 +100,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Acerca de se crea de entrada (es solo texto) porque el aviso de versión nueva se
         // muestra en el menú lateral, sin esperar a que el usuario entre a la sección.
-        _aboutVm = new AboutViewModel(localization, updateService);
+        _aboutVm = new AboutViewModel(
+            localization, updateService, updateInstaller, updateDialog, configService, logService);
         _aboutVm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AboutViewModel.IsUpdateAvailable))
@@ -114,12 +118,40 @@ public partial class MainWindowViewModel : ViewModelBase
 
         NavigateToZip();
 
-        if (config.CheckForUpdatesOnStartup)
+        if (!TryShowPostUpdateSummary(config) && config.CheckForUpdatesOnStartup)
         {
             // Sin await: la consulta es opcional y no debe demorar la apertura de la ventana.
             // El comando absorbe sus propios errores, así que no puede tumbar el arranque.
             _ = _aboutVm.CheckUpdatesCommand.ExecuteAsync(null);
         }
+    }
+
+    /// <summary>
+    /// Primer arranque después de un reemplazo: abre Acerca de con el resumen de qué cambió y
+    /// borra las marcas para que el aviso no se repita. Devuelve <c>true</c> si hubo actualización.
+    /// </summary>
+    private bool TryShowPostUpdateSummary(AppConfig config)
+    {
+        var previous = config.UpdatedFromVersion;
+        if (string.IsNullOrWhiteSpace(previous))
+        {
+            return false;
+        }
+
+        _aboutVm.ShowPostUpdateSummary(previous!, config.UpdatedReleaseNotes);
+        NavigateToAbout();
+
+        _logService.Success(string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            _localization.Get("log_update_done"),
+            previous,
+            Core.AppInfo.Version));
+
+        config.UpdatedFromVersion = null;
+        config.UpdatedReleaseNotes = null;
+        _configService.Save(config);
+
+        return true;
     }
 
     public string AppTitle => $"ForZip {Core.AppInfo.DisplayVersion}";
