@@ -34,9 +34,25 @@
     *   Load the `.report.txt` report (verifies its `.sha256`) or the `.manifest.json` (re-hashes the ZIP evidence).
     *   The system issues a per-file verdict and, if the manifest is signed, validates the digital signature.
 
+## Download
+
+Binaries live on the [releases page](https://github.com/PatagoniaRobot/ForZip/releases/latest): `ForZip.exe` for the graphical interface and `ForZip.Cli.exe` for the command line. They are self-contained: no installer, no administrator rights, and nothing written to the registry unless you enable the context-menu integration.
+
+Every release ships a `.sha256` file next to each executable. **Verify what you downloaded** before running it against evidence:
+
+```
+certutil -hashfile ForZip.exe SHA256
+```
+
+Compare the result with the contents of `ForZip.exe.sha256`.
+
+> The executables are **not yet signed with an Authenticode certificate**, so Windows will show a *"Windows protected your PC"* screen with *"Unknown publisher"* the first time. Click *More info → Run anyway*. Verifying the SHA-256 is what actually proves the file is the published one. Code signing is planned.
+
+From version 1.3.0, ForZip can tell you when a newer version exists via **About → Check for updates**, and from 1.4.0 it can install it: always at your request, and only after verifying the published checksum of the download.
+
 ## System Requirements
 
-*   **OS**: Windows 10/11 (x64)
+*   **OS**: Windows 10/11 (x64). The graphical interface uses the Windows registry for the optional context-menu integration, so it does not run on Linux or macOS.
 *   **Runtime**: .NET 8.0 (included in the self-contained version)
 
 ---
