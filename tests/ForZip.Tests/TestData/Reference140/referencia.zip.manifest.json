@@ -1,0 +1,39 @@
+{
+  "FormatVersion": "1.1",
+  "ForZipVersion": "v1.4.0",
+  "GeneratedAtUtc": "2026-09-04T15:17:17.0365092+00:00",
+  "Operator": {
+    "Name": "Operador de referencia"
+  },
+  "CaseNumber": "REF-140",
+  "Operation": "Compression",
+  "CompressionLevel": 5,
+  "HasPassword": false,
+  "Algorithms": [
+    "SHA256"
+  ],
+  "ZipFileName": "referencia.zip",
+  "ZipFileSize": 366,
+  "ZipSha256": "ac88978bf3a66bd8b23ef3cafca84c84b3c7c0674dd59d61290acb0921630442",
+  "IsSplit": false,
+  "Files": [
+    {
+      "EntryName": "src/a.txt",
+      "SourcePath": "C:\\Evidencia\\REF-140\\src\\a.txt",
+      "Size": 42,
+      "ModifiedUtc": "2026-01-15T12:00:00+00:00",
+      "Hashes": {
+        "SHA256": "441543b241b056efd5143d2429cd37a6ecf6579468ef2865a0a44f5f225fd6b9"
+      }
+    },
+    {
+      "EntryName": "src/b.txt",
+      "SourcePath": "C:\\Evidencia\\REF-140\\src\\b.txt",
+      "Size": 42,
+      "ModifiedUtc": "2026-01-15T12:00:00+00:00",
+      "Hashes": {
+        "SHA256": "352101c696ba1bea50c2bc47630e02920642e2c98d0f86f1c3ecc9f97a2eb85d"
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ForZip.GUI.Views.CloseConfirmView"
+        Title="ForZip"
+        Icon="avares://ForZip/Assets/ForZip.ico"
+        Width="360"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="Full"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Background="{DynamicResource BgSecondaryBrush}">
+
+  <StackPanel Margin="20" Spacing="10">
+
+    <TextBlock x:Name="TitleText"
+               FontSize="14" FontWeight="SemiBold"
+               TextWrapping="Wrap"/>
+
+    <TextBlock x:Name="MessageText"
+               FontSize="12"
+               LineHeight="17"
+               TextWrapping="Wrap"
+               Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+    <!-- Cerrar es lo destructivo, asi que va primero y sin resaltar; el boton acentuado
+         y con el foco es el que deja el trabajo donde esta. -->
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,4,0,0">
+      <Button x:Name="AcceptButton"
+              FontSize="12"
+              Padding="12,5"
+              Click="OnAcceptClick"/>
+      <Button Classes="primary" x:Name="CancelButton"
+              FontSize="12"
+              IsDefault="True"
+              Click="OnCancelClick"/>
+    </StackPanel>
+
+  </StackPanel>
+</Window>

@@ -70,8 +70,28 @@ public partial class PasswordGeneratorViewModel : ObservableObject
     {
         _passwordService = passwordService;
         _localization = localization;
+        _localization.LanguageChanged += () =>
+        {
+            EntropyLabel = ComputeEntropyLabel(EntropyBits);
+            OnPropertyChanged(string.Empty);
+        };
         Generate();
     }
+
+    // Textos de la pantalla. Antes iban escritos en castellano en la vista y no cambiaban con ES | EN.
+    public string Heading => _localization.Get("pwgen_heading");
+    public string Subtitle => _localization.Get("pwgen_subtitle");
+    public string LabelOptions => _localization.Get("pwgen_options");
+    public string LabelLength => _localization.Get("pwgen_length");
+    public string LabelMinLength => string.Format(_localization.Get("pwgen_min_length"), MinLength);
+    public string LabelUppercase => _localization.Get("pwgen_uppercase");
+    public string LabelLowercase => _localization.Get("pwgen_lowercase");
+    public string LabelDigits => _localization.Get("pwgen_digits");
+    public string LabelSymbols => _localization.Get("pwgen_symbols");
+    public string LabelExcluded => string.Format(_localization.Get("pwgen_excluded"), ExcludedCharsDisplay);
+    public string LabelExcludedHint => _localization.Get("pwgen_excluded_hint");
+    public string ButtonGenerate => _localization.Get("pwgen_generate");
+    public string ButtonCopy => _localization.Get("pwgen_copy");
 
     /// <summary>Cotas de longitud, expuestas para que el Slider y el campo numérico las tomen del modelo.</summary>
     public int MinLength => PasswordOptions.MinLength;

@@ -49,6 +49,35 @@ public static partial class SplitArchive
         return $"{basePath}.{oneBasedIndex:D3}";
     }
 
+    /// <summary>
+    /// Nombre de la carpeta donde extraer un archivo: sin el sufijo de volumen y sin las extensiones dobles
+    /// (<c>caso.tar.gz</c> → <c>caso</c>, <c>caso.part1.rar</c> → <c>caso</c>, <c>caso.zip.001</c> → <c>caso</c>).
+    /// Antes quedaba <c>caso.tar</c> o <c>caso.part1</c>.
+    /// </summary>
+    public static string FolderNameFor(string archivePath)
+    {
+        var name = Path.GetFileName(GetBasePath(archivePath));
+        foreach (var compound in new[] { ".tar.gz", ".tar.bz2", ".tar.xz" })
+        {
+            if (name.EndsWith(compound, StringComparison.OrdinalIgnoreCase) && name.Length > compound.Length)
+            {
+                return name[..^compound.Length];
+            }
+        }
+
+        var stem = Path.GetFileNameWithoutExtension(name);
+        var part = PartSuffixRegex().Match(stem);
+        if (part.Success && name.EndsWith(".rar", StringComparison.OrdinalIgnoreCase) && part.Index > 0)
+        {
+            stem = stem[..part.Index];
+        }
+
+        return string.IsNullOrEmpty(stem) ? name : stem;
+    }
+
+    [GeneratedRegex(@"\.part\d+$", RegexOptions.IgnoreCase)]
+    private static partial Regex PartSuffixRegex();
+
     /// <summary>Indica si la ruta tiene el sufijo de un volumen (<c>.001</c>, <c>.002</c>, …).</summary>
     public static bool IsVolumePath(string path) => VolumeSuffixRegex().IsMatch(path);
 
@@ -104,6 +133,7 @@ public static partial class SplitArchive
         {
             var basePath = GetBasePath(path);
             var segments = EnumerateExisting(basePath);
+            ThrowIfGap(basePath, segments.Count);
             return segments.Count > 0 ? segments : new[] { path };
         }
 
@@ -116,10 +146,48 @@ public static partial class SplitArchive
         var split = EnumerateExisting(path);
         if (split.Count > 0)
         {
+            ThrowIfGap(path, split.Count);
             return split;
         }
 
         // No existe nada: devolver la ruta original para que el llamador reporte "no encontrado".
         return new[] { path };
+    }
+
+    /// <summary>
+    /// Todos los volúmenes <c>.NNN</c> de esa ruta base que hay en disco, contiguos o no, en orden.
+    /// </summary>
+    public static IReadOnlyList<string> FindVolumeFiles(string basePath)
+    {
+        var full = Path.GetFullPath(basePath);
+        var dir = Path.GetDirectoryName(full);
+        var name = Path.GetFileName(full);
+        if (string.IsNullOrEmpty(dir) || string.IsNullOrEmpty(name) || !Directory.Exists(dir))
+        {
+            return Array.Empty<string>();
+        }
+
+        return Directory.EnumerateFiles(dir, name + ".*")
+            .Select(p => (Path: p, Match: VolumeSuffixRegex().Match(p)))
+            .Where(x => x.Match.Success
+                        && string.Equals(x.Path[..x.Match.Index], full, StringComparison.OrdinalIgnoreCase)
+                        && int.TryParse(x.Match.Groups[1].Value, out _))
+            .OrderBy(x => int.Parse(x.Match.Groups[1].Value))
+            .Select(x => x.Path)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Si después del último volumen contiguo hay otro más adelante, falta uno del medio: se dice cuál, en vez
+    /// de leer un juego cortado y fallar más tarde con un error que no lo nombra.
+    /// </summary>
+    private static void ThrowIfGap(string basePath, int contiguous)
+    {
+        if (FindVolumeFiles(basePath).Count > contiguous)
+        {
+            var missing = GetVolumePath(basePath, contiguous + 1);
+            throw new FileNotFoundException(
+                $"Falta el volumen {Path.GetFileName(missing)}: hay volúmenes posteriores, el juego está incompleto.", missing);
+        }
     }
 }

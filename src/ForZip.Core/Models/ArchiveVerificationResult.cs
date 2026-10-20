@@ -38,7 +38,13 @@ public enum FileVerificationStatus
     Missing,
 
     /// <summary>El archivo está en el ZIP pero no figura en el manifiesto.</summary>
-    Extra
+    Extra,
+
+    /// <summary>
+    /// Está en el paquete y en el manifiesto, pero el manifiesto no registró su hash: solo se constató que está,
+    /// no su contenido. Antes contaba como OK.
+    /// </summary>
+    Unverified
 }
 
 /// <summary>Resultado de verificar una entrada concreta contra el manifiesto.</summary>
@@ -62,7 +68,9 @@ public sealed record SignatureInfo(
     string Details,
     DateTimeOffset? TimestampUtc = null,
     string? TimestampAuthority = null,
-    bool? TimestampValid = null);
+    bool? TimestampValid = null,
+    string? SignerThumbprint = null,
+    string? TimestampAuthorityThumbprint = null);
 
 /// <summary>Veredicto de verificación de un volumen (segmento) de un archivo dividido.</summary>
 public sealed record VolumeVerificationEntry(
@@ -80,6 +88,9 @@ public sealed class ArchiveVerificationResult
 
     /// <summary>Verdadero si el hash SHA-256 global del ZIP coincide (cuando hay dato).</summary>
     public bool? ZipHashMatches { get; set; }
+
+    /// <summary>Formato del paquete verificado, reconocido por su firma.</summary>
+    public ArchiveFormat ArchiveFormat { get; set; } = ArchiveFormat.Zip;
 
     /// <summary>Estado de la firma digital del manifiesto, si existe un archivo .p7s.</summary>
     public SignatureInfo? Signature { get; set; }
@@ -100,6 +111,12 @@ public sealed class ArchiveVerificationResult
     public int AlteredCount => Entries.Count(e => e.Status == FileVerificationStatus.Altered);
     public int MissingCount => Entries.Count(e => e.Status == FileVerificationStatus.Missing);
     public int ExtraCount => Entries.Count(e => e.Status == FileVerificationStatus.Extra);
+    public int UnverifiedCount => Entries.Count(e => e.Status == FileVerificationStatus.Unverified);
+
+    /// <summary>Nombres de los volúmenes que el manifiesto registra y no están en disco, en orden.</summary>
+    public IReadOnlyList<string> MissingVolumes =>
+        Volumes?.Where(v => v.Status == FileVerificationStatus.Missing).Select(v => v.FileName).ToList()
+        ?? (IReadOnlyList<string>)Array.Empty<string>();
 
     /// <summary>Verdadero si algún volumen está alterado o faltante.</summary>
     public bool HasVolumeProblems =>
@@ -116,7 +133,18 @@ public sealed class ArchiveVerificationResult
         AlteredCount == 0 &&
         MissingCount == 0 &&
         ExtraCount == 0 &&
+        UnverifiedCount == 0 &&
         !HasVolumeProblems &&
         ZipHashMatches != false &&
         (Signature == null || (Signature.Valid && Signature.TimestampValid != false));
+
+    /// <summary>
+    /// Se comprobó una discrepancia: archivos alterados, faltantes o añadidos, un volumen o el hash global que no
+    /// coinciden, o una firma inválida. Lo que no es íntegro sin ser esto (falta la contraseña, archivos sin hash
+    /// en el manifiesto) es una verificación incompleta, no una manipulación.
+    /// </summary>
+    public bool TamperDetected =>
+        AlteredCount > 0 || MissingCount > 0 || ExtraCount > 0 ||
+        HasVolumeProblems || ZipHashMatches == false ||
+        Signature is { Valid: false } || Signature is { TimestampValid: false };
 }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input;
+using ForZip.Core.Interfaces;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using ForZip.GUI.ViewModels;
@@ -50,13 +52,73 @@ public partial class LogConsoleView : UserControl
             var path = picked.TryGetLocalPath();
             if (!string.IsNullOrEmpty(path))
             {
-                var sb = new StringBuilder();
-                foreach (var entry in vm.Entries)
-                {
-                    sb.AppendLine($"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] {entry.Level}: {entry.Message}");
-                }
-                await File.WriteAllTextAsync(path, sb.ToString());
+                await File.WriteAllTextAsync(path, LogConsoleViewModel.FormatAll(vm.Entries));
             }
         }
+    }
+
+    private LogWindow? _window;
+
+    /// <summary>Abre la bitácora en su ventana (una sola: si ya está abierta, la trae al frente).</summary>
+    private void OnPopOutClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not LogConsoleViewModel vm)
+        {
+            return;
+        }
+
+        if (_window != null)
+        {
+            _window.Activate();
+            return;
+        }
+
+        _window = new LogWindow(vm);
+        _window.Closed += (_, _) => _window = null;
+        if (TopLevel.GetTopLevel(this) is Window owner)
+        {
+            _window.Show(owner);
+        }
+        else
+        {
+            _window.Show();
+        }
+    }
+
+    private async void OnCopySelectedClick(object? sender, RoutedEventArgs e) => await CopySelectedAsync();
+
+    private async void OnCopyAllClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is LogConsoleViewModel vm && TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard)
+        {
+            await clipboard.SetTextAsync(LogConsoleViewModel.FormatAll(vm.Entries));
+        }
+    }
+
+    /// <summary>Ctrl+C sobre las filas elegidas (clic, Ctrl+clic, Mayús+clic) las copia en orden.</summary>
+    private async void OnLogListKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.C && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+            await CopySelectedAsync();
+        }
+    }
+
+    private async Task CopySelectedAsync()
+    {
+        if (DataContext is not LogConsoleViewModel vm || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+        {
+            return;
+        }
+
+        var selected = LogList.SelectedItems?.OfType<LogEntry>().ToHashSet() ?? new HashSet<LogEntry>();
+        if (selected.Count == 0)
+        {
+            return;
+        }
+
+        // En el orden de la bitácora, no en el del clic.
+        await clipboard.SetTextAsync(LogConsoleViewModel.FormatAll(vm.Entries.Where(selected.Contains)));
     }
 }

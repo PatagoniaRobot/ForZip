@@ -30,11 +30,13 @@ public enum ShellVerb
 {
     None,
     Compress,
+    CompressReserved,
     Extract,
     ExtractHere,
     ExtractTo,
     Hash,
-    Verify
+    Verify,
+    OpenEnvelope
 }
 
 /// <summary>Petición resuelta a partir de los argumentos de línea de comandos.</summary>
@@ -51,22 +53,26 @@ public static class ShellArgs
     public static string VerbToken(ShellVerb verb) => verb switch
     {
         ShellVerb.Compress => "compress",
+        ShellVerb.CompressReserved => "compress-reserved",
         ShellVerb.Extract => "extract",
         ShellVerb.ExtractHere => "extract-here",
         ShellVerb.ExtractTo => "extract-to",
         ShellVerb.Hash => "hash",
         ShellVerb.Verify => "verify",
+        ShellVerb.OpenEnvelope => "open-envelope",
         _ => "open"
     };
 
     private static ShellVerb MapToken(string token) => token.ToLowerInvariant() switch
     {
         "compress" or "zip" => ShellVerb.Compress,
+        "compress-reserved" => ShellVerb.CompressReserved,
         "extract" or "unzip" => ShellVerb.Extract,
         "extract-here" => ShellVerb.ExtractHere,
         "extract-to" => ShellVerb.ExtractTo,
         "hash" => ShellVerb.Hash,
         "verify" => ShellVerb.Verify,
+        "open-envelope" => ShellVerb.OpenEnvelope,
         _ => ShellVerb.None
     };
 
@@ -88,11 +94,21 @@ public static class ShellArgs
         if (verb == ShellVerb.None)
         {
             // Sin verbo explícito: tratar todos los argumentos como rutas (default: comprimir)
-            var asPaths = args.Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+            var asPaths = args.Where(a => !string.IsNullOrWhiteSpace(a)).Select(RepairPath).ToList();
             return asPaths.Count > 0 ? new ShellRequest(ShellVerb.Compress, asPaths) : null;
         }
 
-        var paths = args.Skip(1).Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+        var paths = args.Skip(1).Where(a => !string.IsNullOrWhiteSpace(a)).Select(RepairPath).ToList();
         return paths.Count > 0 ? new ShellRequest(verb, paths) : null;
     }
+
+    /// <summary>
+    /// Repara la raíz de una unidad que llegó rota por las comillas del comando. Sobre el fondo de "D:\" el
+    /// Explorador arma <c>"D:\"</c>, y en la línea de comandos de Windows la barra antes de la comilla la
+    /// escapa: el argumento llega como <c>D:"</c>.
+    /// </summary>
+    internal static string RepairPath(string arg) =>
+        arg.Length == 3 && char.IsAsciiLetter(arg[0]) && arg[1] == ':' && arg[2] == '"'
+            ? arg[..2] + "\\"
+            : arg;
 }

@@ -166,4 +166,203 @@ public class HashServiceTests
 
         Assert.Equal("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", hash);
     }
+
+    // ---------------------------------------------------------------------
+    //  Progreso y uso del hilo llamador
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public async Task ComputeHashesAsync_ReportsProgress_MonotonicAndEndsAtOne()
+    {
+        var tempFile = CreateTempFile(8 * 1024 * 1024);
+        try
+        {
+            var service = new HashService();
+            var algorithms = new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 };
+            var reports = new List<double>();
+            var progress = new SynchronousProgress(reports.Add);
+
+            await service.ComputeHashesAsync(tempFile, algorithms, progress, CancellationToken.None);
+
+            Assert.NotEmpty(reports);
+            Assert.All(reports, r => Assert.InRange(r, 0.0, 1.0));
+            // El avance nunca retrocede y el último aviso cierra en 1.0
+            for (var i = 1; i < reports.Count; i++)
+            {
+                Assert.True(reports[i] >= reports[i - 1], $"El progreso retrocedió en el aviso {i}.");
+            }
+            Assert.Equal(1.0, reports[^1], 6);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task ComputeHashesAsync_SobreStreamConTamanoConocido_ReportaProgreso()
+    {
+        // Es el caso del ZIP dividido en volúmenes: el archivo lógico no existe en disco, así
+        // que el hash se calcula sobre un stream y el tamaño hay que pasarlo aparte. Sin esta
+        // sobrecarga la etapa del informe avanzaba sin decir nada y parecía colgada.
+        var datos = new byte[4 * 1024 * 1024];
+        Random.Shared.NextBytes(datos);
+
+        var service = new HashService();
+        var reports = new List<double>();
+        var progress = new SynchronousProgress(reports.Add);
+
+        await using var stream = new MemoryStream(datos);
+        var hashes = await service.ComputeHashesAsync(
+            stream,
+            new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 },
+            datos.Length,
+            progress,
+            CancellationToken.None);
+
+        Assert.NotEmpty(reports);
+        Assert.All(reports, r => Assert.InRange(r, 0.0, 1.0));
+        Assert.Equal(1.0, reports[^1], 6);
+
+        // Y el hash es el mismo que sin progreso: el aviso no toca el cálculo.
+        await using var otra = new MemoryStream(datos);
+        var sinProgreso = await service.ComputeHashesAsync(
+            otra, new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 }, CancellationToken.None);
+
+        Assert.Equal(sinProgreso[HashAlgorithmType.SHA256], hashes[HashAlgorithmType.SHA256]);
+    }
+
+    [Fact]
+    public async Task ComputeHashesAsync_ThrottlesProgress_AtMostOneReportPerPermille()
+    {
+        // A 64 KB por vuelta, 8 MiB daría 128 avisos; con archivos grandes serían decenas de
+        // miles y el hilo de UI no da abasto. El acumulador se reporta por milésima.
+        var tempFile = CreateTempFile(8 * 1024 * 1024);
+        try
+        {
+            var service = new HashService();
+            var algorithms = new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 };
+            var count = 0;
+            var progress = new SynchronousProgress(_ => Interlocked.Increment(ref count));
+
+            await service.ComputeHashesAsync(tempFile, algorithms, progress, CancellationToken.None);
+
+            // 1000 milésimas más el aviso final de cierre
+            Assert.InRange(count, 1, 1001);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task ComputeHashesAsync_EmptyFile_ReportsCompletion()
+    {
+        var tempFile = CreateTempFile(0);
+        try
+        {
+            var service = new HashService();
+            var algorithms = new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 };
+            var reports = new List<double>();
+            var progress = new SynchronousProgress(reports.Add);
+
+            await service.ComputeHashesAsync(tempFile, algorithms, progress, CancellationToken.None);
+
+            // Un archivo vacío no entra al bucle de lectura, pero igual tiene que cerrar la barra
+            Assert.Equal(1.0, Assert.Single(reports), 6);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    /// <summary>
+    /// Regresión de la "ventana invisible": si el cálculo captura el contexto de sincronización
+    /// del llamador, cada bloque de 64 KB devuelve el TransformBlock al hilo de UI y la ventana
+    /// de hash rápido queda en blanco hasta terminar. El hash no debe usar el contexto del
+    /// llamador para nada: sin ConfigureAwait(false) este test se cuelga y el Join falla.
+    /// </summary>
+    [Fact]
+    public void ComputeHashesAsync_DoesNotUseCallerSynchronizationContext()
+    {
+        var service = new HashService();
+        var algorithms = new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 };
+
+        var postCount = -1;
+        Exception? failure = null;
+
+        var thread = new Thread(() =>
+        {
+            var context = new CountingSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+                // El bloqueo es deliberado: es la trampa que detecta la captura de contexto.
+                // El hilo es propio y el Join de abajo acota la espera, así que no cuelga la suite.
+#pragma warning disable xUnit1031
+                service.ComputeHashesAsync(SampleFilePath, algorithms, null, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+#pragma warning restore xUnit1031
+                postCount = context.PostCount;
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
+        });
+
+        thread.IsBackground = true;
+        thread.Start();
+
+        Assert.True(
+            thread.Join(TimeSpan.FromSeconds(30)),
+            "El cálculo se bloqueó esperando al contexto del llamador (falta ConfigureAwait(false)).");
+        Assert.Null(failure);
+        Assert.Equal(0, postCount);
+    }
+
+    private static string CreateTempFile(int sizeBytes)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"forzip_hash_{Guid.NewGuid():N}.bin");
+        var content = new byte[sizeBytes];
+        Random.Shared.NextBytes(content);
+        File.WriteAllBytes(path, content);
+        return path;
+    }
+
+    /// <summary>
+    /// <see cref="Progress{T}"/> entrega los avisos de forma diferida, lo que haría inestables
+    /// los conteos. Esta implementación invoca en el mismo hilo que reporta.
+    /// </summary>
+    private sealed class SynchronousProgress : IProgress<double>
+    {
+        private readonly Action<double> _onReport;
+
+        public SynchronousProgress(Action<double> onReport) => _onReport = onReport;
+
+        public void Report(double value) => _onReport(value);
+    }
+
+    /// <summary>Cuenta los reenvíos al contexto del llamador, que deben ser cero.</summary>
+    private sealed class CountingSynchronizationContext : SynchronizationContext
+    {
+        private int _postCount;
+
+        public int PostCount => _postCount;
+
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            Interlocked.Increment(ref _postCount);
+            base.Post(d, state);
+        }
+
+        public override void Send(SendOrPostCallback d, object? state)
+        {
+            Interlocked.Increment(ref _postCount);
+            base.Send(d, state);
+        }
+    }
 }

@@ -39,10 +39,23 @@ public class ConfigService : IConfigService
         WriteIndented = true
     };
 
+    // La ventana principal y la del hash rápido son procesos distintos y comparten este archivo: un acceso que choca
+    // con el del otro se reintenta un momento en vez de cerrar la aplicación.
+    private const int Attempts = 10;
+    private const int RetryDelayMs = 50;
+
     private readonly string _configPath;
 
-    public ConfigService() : this(AppContext.BaseDirectory)
+    /// <summary>Configuración de solo lectura al lado del ejecutable, cuando los datos van a otra carpeta.</summary>
+    private readonly string? _readOnlyFallbackPath;
+
+    public ConfigService() : this(AppDataLocation.Directory)
     {
+        var besideExe = Path.Combine(AppDataLocation.ExecutableDirectory, FileName);
+        if (!string.Equals(Path.GetFullPath(besideExe), Path.GetFullPath(_configPath), StringComparison.OrdinalIgnoreCase))
+        {
+            _readOnlyFallbackPath = besideExe;
+        }
     }
 
     // Constructor que recibe el directorio base permite aislar tests usando carpetas temporales
@@ -53,14 +66,18 @@ public class ConfigService : IConfigService
 
     public AppConfig Load()
     {
-        if (!File.Exists(_configPath))
+        // Instalado donde no se puede escribir, la primera vez vale la configuración que vino con el ejecutable.
+        var path = !File.Exists(_configPath) && _readOnlyFallbackPath != null && File.Exists(_readOnlyFallbackPath)
+            ? _readOnlyFallbackPath
+            : _configPath;
+        if (!File.Exists(path))
         {
             return new AppConfig();
         }
 
         try
         {
-            var json = File.ReadAllText(_configPath);
+            var json = WithRetry(() => File.ReadAllText(path));
             var config = JsonSerializer.Deserialize<AppConfig>(json, SerializerOptions);
             return config ?? new AppConfig();
         }
@@ -80,8 +97,47 @@ public class ConfigService : IConfigService
             Directory.CreateDirectory(directory);
         }
 
+        // Se escribe aparte y se reemplaza de una vez: quien lee nunca ve un archivo a medio escribir.
         var json = JsonSerializer.Serialize(config, SerializerOptions);
-        File.WriteAllText(_configPath, json);
+        var temp = _configPath + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(temp, json);
+        try
+        {
+            WithRetry(() =>
+            {
+                File.Move(temp, _configPath, overwrite: true);
+                return true;
+            });
+        }
+        finally
+        {
+            if (File.Exists(temp))
+            {
+                try
+                {
+                    File.Delete(temp);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+    }
+
+    private static T WithRetry<T>(Func<T> action)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return action();
+            }
+            // "Acceso denegado" también: es lo que da Windows mientras el otro proceso termina de reemplazar el archivo.
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && attempt < Attempts)
+            {
+                Thread.Sleep(RetryDelayMs * attempt);
+            }
+        }
     }
 
     private void BackupCorruptedFile()

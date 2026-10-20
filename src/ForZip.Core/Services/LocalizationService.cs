@@ -53,9 +53,11 @@ public class LocalizationService : ILocalizationService
 
     public string CurrentLanguage => _currentLanguage;
 
-    public string Get(string key)
+    public string Get(string key) => Get(key, _currentLanguage);
+
+    public string Get(string key, string language)
     {
-        var primary = _currentLanguage == SpanishCode ? _spanish : _english;
+        var primary = language == SpanishCode ? _spanish : _english;
         if (primary.TryGetValue(key, out var value))
         {
             return value;

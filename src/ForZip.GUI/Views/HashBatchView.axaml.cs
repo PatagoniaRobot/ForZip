@@ -60,10 +60,11 @@ public partial class HashBatchView : UserControl
             return;
         }
 
-        // Hash Batch sólo acepta archivos individuales (no carpetas, según mockup)
+        // Archivos y carpetas: una carpeta se recorre entera y cada archivo queda con su ruta relativa, como al
+        // empaquetar. Antes se descartaban las carpetas sin aviso.
         var paths = files
             .Select(f => f.TryGetLocalPath())
-            .Where(p => !string.IsNullOrEmpty(p) && File.Exists(p))
+            .Where(p => !string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p)))
             .Select(p => p!)
             .ToList();
         vm.AddPaths(paths);
@@ -80,7 +81,29 @@ public partial class HashBatchView : UserControl
         var picked = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             AllowMultiple = true,
-            Title = "Seleccionar archivos para hashear"
+            Title = vm.PickerFilesTitle
+        });
+
+        var paths = picked
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Select(p => p!)
+            .ToList();
+        vm.AddPaths(paths);
+    }
+
+    private async void OnBrowseFolderClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null || DataContext is not HashBatchViewModel vm)
+        {
+            return;
+        }
+
+        var picked = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            AllowMultiple = true,
+            Title = vm.PickerFoldersTitle
         });
 
         var paths = picked
@@ -104,6 +127,9 @@ public partial class HashBatchView : UserControl
             Title = "Guardar informe forense",
             DefaultExtension = "txt",
             SuggestedFileName = $"ForZip_Report_{DateTime.Now:yyyyMMdd_HHmmss}.txt",
+            SuggestedStartLocation = string.IsNullOrEmpty(vm.ExportStartFolder)
+                ? null
+                : await topLevel.StorageProvider.TryGetFolderFromPathAsync(vm.ExportStartFolder),
             FileTypeChoices = new[]
             {
                 new FilePickerFileType("Informe ForZip")

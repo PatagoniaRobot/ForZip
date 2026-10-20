@@ -6,136 +6,240 @@
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding AppTitle}"
         Icon="avares://ForZip/Assets/ForZip.ico"
-        Width="1100" Height="700"
-        MinWidth="900" MinHeight="600"
+        Width="1200" Height="780"
+        MinWidth="980" MinHeight="640"
+        WindowState="Maximized"
+        WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BgPrimaryBrush}">
 
-  <Grid ColumnDefinitions="220,*" RowDefinitions="*,Auto,28">
+  <Grid ColumnDefinitions="240,*" RowDefinitions="*,Auto,Auto">
 
-    <!-- Sidebar -->
-    <Border Grid.Row="0" Grid.Column="0"
+    <!-- ================== Barra lateral ================== -->
+    <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
             Background="{DynamicResource BgSecondaryBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="0,0,1,0">
-      <DockPanel LastChildFill="False" Margin="12">
+      <DockPanel LastChildFill="False" Margin="14,20,14,16">
 
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="4,8,4,16">
-          <Image Source="avares://ForZip/Assets/ForZip_logo_64x64.png" Width="32" Height="32"/>
-          <TextBlock Text="ForZip"
-                     FontSize="18" FontWeight="Bold"
-                     Foreground="{DynamicResource AccentBrush}"
-                     VerticalAlignment="Center"/>
-        </StackPanel>
+        <!-- Marca: el logo oficial, el mismo del ejecutable y de Acerca de (Claudio, 2026-10-17). -->
+        <Button DockPanel.Dock="Top" Classes="brand" Command="{Binding NavigateToHomeCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Image Source="avares://ForZip/Assets/ForZip_logo_64x64.png" Width="36" Height="36"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"/>
+            <TextBlock Text="ForZip" FontSize="19" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+          </StackPanel>
+        </Button>
 
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuZip}"
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToHomeCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=home}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconHome}"/></Viewbox>
+            <TextBlock Text="{Binding MenuHome}"/>
+          </StackPanel>
+        </Button>
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToZipCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=zip}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconPackage}"/></Viewbox>
+            <TextBlock Text="{Binding MenuZip}"/>
+          </StackPanel>
+        </Button>
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToUnzipCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=unzip}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconExtract}"/></Viewbox>
+            <TextBlock Text="{Binding MenuUnzip}"/>
+          </StackPanel>
+        </Button>
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToVerifyReportCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=verify}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconVerify}"/></Viewbox>
+            <TextBlock Text="{Binding MenuVerify}"/>
+          </StackPanel>
+        </Button>
+
+        <TextBlock DockPanel.Dock="Top" Classes="overline" Text="{Binding MenuToolsHeader}" Margin="12,18,0,6"/>
+
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToPasswordGeneratorCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=password}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconKey}"/></Viewbox>
+            <TextBlock Text="{Binding MenuPassword}"/>
+          </StackPanel>
+        </Button>
+        <Button DockPanel.Dock="Top" Classes="navButton" Command="{Binding NavigateToHashBatchCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=hash}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconHashBatch}"/></Viewbox>
+            <TextBlock Text="{Binding MenuHashBatch}"/>
+          </StackPanel>
+        </Button>
+
+        <!-- Perfil activo, visible desde todas las secciones: gobierna la bitácora de toda la
+             aplicación, no solo Empaquetar. Reservado va en otro color y con candado, para que
+             no se pase por alto. Clic: lleva al selector, en Empaquetar. -->
+        <Button DockPanel.Dock="Bottom" Classes="profileBadge"
+                Classes.reserved="{Binding IsReservedProfileActive}"
                 Command="{Binding NavigateToZipCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuUnzip}"
-                Command="{Binding NavigateToUnzipCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuHashBatch}"
-                Command="{Binding NavigateToHashBatchCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuVerify}"
-                Command="{Binding NavigateToVerifyReportCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuPassword}"
-                Command="{Binding NavigateToPasswordGeneratorCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
+                ToolTip.Tip="{Binding TooltipProfileBadge}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Panel Width="18" Height="18" VerticalAlignment="Center">
+              <Ellipse Width="8" Height="8" Fill="{DynamicResource SuccessBrush}"
+                       IsVisible="{Binding !IsReservedProfileActive}"/>
+              <Viewbox Width="18" Height="18" IsVisible="{Binding IsReservedProfileActive}">
+                <Path Classes="icon" Stroke="{DynamicResource ReservedTextBrush}" Data="{StaticResource IconLock}"/>
+              </Viewbox>
+            </Panel>
+            <TextBlock Text="{Binding LabelProfileBadge}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
 
-        <Separator DockPanel.Dock="Top"
-                   Background="{DynamicResource BorderBrush}"
-                   Margin="4,12"/>
-
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuSettings}"
-                Command="{Binding NavigateToSettingsCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-        <Button DockPanel.Dock="Top"
-                Content="{Binding MenuAbout}"
-                Command="{Binding NavigateToAboutCommand}"
-                Classes="navButton"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Margin="0,2"/>
-
-        <TextBlock DockPanel.Dock="Bottom"
-                   Text="{Binding AppVersion}"
-                   FontSize="11"
-                   Foreground="{DynamicResource TextSecondaryBrush}"
-                   HorizontalAlignment="Center"
-                   Margin="0,12,0,4"/>
+        <Button DockPanel.Dock="Bottom" Classes="navButton" Command="{Binding NavigateToAboutCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=about}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconAbout}"/></Viewbox>
+            <TextBlock Text="{Binding MenuAbout}"/>
+          </StackPanel>
+        </Button>
+        <Button DockPanel.Dock="Bottom" Classes="navButton" Command="{Binding NavigateToSettingsCommand}"
+                Classes.active="{Binding ActiveSection, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=settings}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconSettings}"/></Viewbox>
+            <TextBlock Text="{Binding MenuSettings}"/>
+          </StackPanel>
+        </Button>
       </DockPanel>
     </Border>
 
-    <!-- Área de contenido -->
+    <!-- ================== Contenido ================== -->
     <ContentControl Grid.Row="0" Grid.Column="1"
-                    Content="{Binding CurrentView}"
-                    Margin="16"/>
+                    Content="{Binding CurrentView}"/>
 
-    <!-- Log Console -->
+    <!-- Bitácora: plegable desde la barra de estado; se abre sola ante una advertencia o un error. -->
     <views:LogConsoleView Grid.Row="1" Grid.Column="1"
                           DataContext="{Binding LogConsole}"/>
 
-    <!-- Barra de estado -->
+    <!-- ================== Barra de estado ================== -->
     <Border Grid.Row="2" Grid.ColumnSpan="2"
             Background="{DynamicResource BgSecondaryBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto" Margin="12,4">
-        <TextBlock Grid.Column="0"
-                   Text="{Binding StatusReady}"
-                   FontSize="11"
-                   Foreground="{DynamicResource TextSecondaryBrush}"
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="16,6">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Ellipse Width="8" Height="8" Fill="{DynamicResource SuccessBrush}"/>
+          <TextBlock Text="{Binding StatusReady}" FontSize="13"
+                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+        </StackPanel>
+        <!-- Corriendo como administrador: arrastrar y el menú contextual no llegan a esta ventana. -->
+        <TextBlock Grid.Column="1"
+                   IsVisible="{Binding IsElevated}"
+                   Text="{Binding StatusElevated}"
+                   ToolTip.Tip="{Binding TooltipElevated}"
+                   FontSize="13" FontWeight="SemiBold"
+                   Foreground="{DynamicResource WarningTextBrush}"
+                   TextTrimming="CharacterEllipsis"
+                   Margin="16,0,8,0"
                    VerticalAlignment="Center"/>
-        <Button Grid.Column="1"
+        <TextBlock Grid.Column="2" Text="{Binding AppVersion}" FontSize="12"
+                   Foreground="{DynamicResource TextTertiaryBrush}"
+                   VerticalAlignment="Center" Margin="0,0,14,0"/>
+        <ToggleButton Grid.Column="3" Classes="statusToggle"
+                      IsChecked="{Binding LogConsole.IsExpanded}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Viewbox Width="16" Height="16"><Path Classes="icon" Data="{StaticResource IconLog}"/></Viewbox>
+            <TextBlock Text="{Binding LabelLogToggle}" FontSize="13" VerticalAlignment="Center"/>
+          </StackPanel>
+        </ToggleButton>
+        <Button Grid.Column="4"
                 Content="ES | EN"
                 Command="{Binding ToggleLanguageCommand}"
                 Classes="linkButton"
-                FontSize="11"/>
+                FontSize="13"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"/>
       </Grid>
     </Border>
   </Grid>
 
   <Window.Styles>
+    <Style Selector="Button.brand">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="6,0,6,0"/>
+      <Setter Property="Margin" Value="0,0,0,22"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="Button.brand:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
     <Style Selector="Button.navButton">
       <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="12,0"/>
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="Margin" Value="0,2"/>
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="Button.navButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="Button.navButton Path.icon">
+      <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="Button.navButton.active">
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.navButton.active:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+    <Style Selector="Button.navButton.active Path.icon">
+      <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+
+    <Style Selector="Button.profileBadge">
+      <Setter Property="Background" Value="{DynamicResource BgPrimaryBrush}"/>
       <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
       <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="Margin" Value="0,12,0,0"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
-    <Style Selector="Button.navButton:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+    <Style Selector="Button.profileBadge:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
     </Style>
-    <Style Selector="Button.linkButton">
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Padding" Value="6,2"/>
+    <Style Selector="Button.profileBadge.reserved">
+      <Setter Property="Background" Value="{DynamicResource ReservedSoftBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ReservedTextBrush}"/>
+    </Style>
+    <Style Selector="Button.profileBadge.reserved:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ReservedSoftBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ReservedTextBrush}"/>
+    </Style>
+
+    <Style Selector="ToggleButton.statusToggle">
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="10,4"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.statusToggle:checked Path.icon">
+      <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
     </Style>
   </Window.Styles>
 </Window>

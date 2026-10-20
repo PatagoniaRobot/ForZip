@@ -32,6 +32,8 @@ public class ShellArgsTests
 {
     [Theory]
     [InlineData("compress", ShellVerb.Compress)]
+    [InlineData("compress-reserved", ShellVerb.CompressReserved)]
+    [InlineData("open-envelope", ShellVerb.OpenEnvelope)]
     [InlineData("zip", ShellVerb.Compress)]
     [InlineData("extract", ShellVerb.Extract)]
     [InlineData("extract-here", ShellVerb.ExtractHere)]

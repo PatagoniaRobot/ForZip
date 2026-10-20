@@ -57,5 +57,10 @@ public class OperatorConfirmationResult
 
 public interface IOperatorDialogService
 {
-    Task<OperatorConfirmationResult?> ConfirmOperatorAsync(OperatorInfo currentInfo, string? defaultTimestampUrl = null);
+    /// <param name="offerSigning">
+    /// Si se ofrece firmar. Hash Batch no firma su informe: ofrecerlo era pedir datos que después se descartaban.
+    /// </param>
+    /// <param name="offerExternalHash">Si se ofrece el .sha256 del informe (solo Hash Batch).</param>
+    Task<OperatorConfirmationResult?> ConfirmOperatorAsync(OperatorInfo currentInfo, string? defaultTimestampUrl = null, bool offerSigning = true,
+        bool offerExternalHash = false);
 }

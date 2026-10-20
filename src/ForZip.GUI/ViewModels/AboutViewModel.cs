@@ -352,10 +352,71 @@ public partial class AboutViewModel : ObservableObject
     [RelayCommand]
     private void OpenHelp()
     {
-        var helpPath = Path.Combine(AppContext.BaseDirectory, "Help_ForZip.html");
+        var helpPath = MaterializeHelp() ?? Path.Combine(AppContext.BaseDirectory, "Help_ForZip.html");
         if (File.Exists(helpPath))
         {
             OpenWithDefaultApp(helpPath);
+        }
+    }
+
+    /// <summary>
+    /// Escribe la ayuda que viaja dentro del ejecutable en un temporal con el número de versión y devuelve su ruta.
+    /// Así se abre siempre la de esta versión: la actualización reemplaza solo el .exe, y la copia que está al lado
+    /// quedaba en la versión anterior. Null si no se pudo (se usa la de al lado).
+    /// </summary>
+    private static string? MaterializeHelp()
+    {
+        try
+        {
+            using var resource = typeof(AboutViewModel).Assembly.GetManifestResourceStream("ForZip.Help_ForZip.html");
+            if (resource == null)
+            {
+                return null;
+            }
+
+            var directory = Path.Combine(Path.GetTempPath(), "ForZip");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, $"Help_ForZip-{Core.AppInfo.Version}.html");
+            using (var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            {
+                resource.CopyTo(file);
+            }
+
+            return path;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenLicenses()
+    {
+        var path = MaterializeLicenses();
+        if (path != null)
+        {
+            OpenWithDefaultApp(path);
+        }
+    }
+
+    /// <summary>
+    /// Escribe en un temporal las licencias embebidas (como la ayuda: las de al lado pueden ser de la 1.4, o no estar
+    /// si se actualizó desde ella) y devuelve su ruta. Null si no se pudo.
+    /// </summary>
+    private static string? MaterializeLicenses()
+    {
+        try
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "ForZip");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, $"ForZip-licencias-{Core.AppInfo.Version}.txt");
+            File.WriteAllText(path, Core.Services.LicenseTexts.Combined(), new System.Text.UTF8Encoding(true));
+            return path;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 

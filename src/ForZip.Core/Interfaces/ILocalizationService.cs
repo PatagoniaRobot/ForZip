@@ -28,6 +28,12 @@ namespace ForZip.Core.Interfaces;
 public interface ILocalizationService
 {
     string Get(string key);
+
+    /// <summary>
+    /// El texto en un idioma dado, sin cambiar el de la aplicación. Lo usan los informes, que salen en el idioma
+    /// pedido aunque la pantalla esté en otro.
+    /// </summary>
+    string Get(string key, string language);
     void SetLanguage(string code);
     string CurrentLanguage { get; }
     IEnumerable<string> GetAllKeys();

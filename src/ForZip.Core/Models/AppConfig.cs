@@ -38,6 +38,28 @@ public class AppConfig
     public bool SimpleMode { get; set; } = true;
 
     /// <summary>
+    /// Perfil de confidencialidad del empaquetado. Es un eje <b>ortogonal</b> a
+    /// <see cref="SimpleMode"/>: aquel decide cuántos controles se ven, este decide qué
+    /// artefactos se producen y qué información queda expuesta. Son campos separados a
+    /// propósito y no deben fusionarse en un solo selector.
+    /// </summary>
+    public ConfidentialityProfile Profile { get; set; } = ConfidentialityProfile.Standard;
+
+    /// <summary>
+    /// Formato elegido en el modo avanzado. El modo simple y el perfil Reservado empaquetan siempre en
+    /// ZIP: el simple aplica los valores recomendados y el Reservado mete el ZIP en el sobre.
+    /// </summary>
+    public ArchiveFormat PreferredFormat { get; set; } = ArchiveFormat.Zip;
+
+    /// <summary>
+    /// El aviso del perfil Estándar sobre nombres y sidecar en claro ya se mostró en esta
+    /// sesión. No se persiste: una advertencia que aparece siempre se vuelve invisible, pero
+    /// una que no vuelve nunca más deja de advertir a quien cambió de máquina.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool StandardProfileNoticeShown { get; set; }
+
+    /// <summary>
     /// TSA (RFC 3161) usada para el sellado de tiempo de la firma del manifiesto.
     /// </summary>
     public string TimestampServerUrl { get; set; } = "http://timestamp.digicert.com";
@@ -60,4 +82,17 @@ public class AppConfig
     /// aunque el equipo ya no tenga conexión.
     /// </summary>
     public string? UpdatedReleaseNotes { get; set; }
+
+    /// <summary>
+    /// Certificados de quienes firman manifiestos y recibos en los que el operador confía, por su huella SHA-256.
+    /// Con la lista se puede decir "firmado por alguien conocido"; sin ella, solo que la firma es válida.
+    /// </summary>
+    public List<TrustedSigner> TrustedSigners { get; set; } = new();
+}
+
+/// <summary>Un firmante de confianza: la huella SHA-256 de su certificado y un nombre para reconocerlo.</summary>
+public sealed class TrustedSigner
+{
+    public string Thumbprint { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 }

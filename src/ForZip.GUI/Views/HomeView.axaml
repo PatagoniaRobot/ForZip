@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+             x:Class="ForZip.GUI.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+
+  <!-- Inicio: las tres tareas como tarjetas grandes. La primera, la más usada, va en el color
+       del acento; las otras dos, en tarjeta clara. Cada tarjeta entera es el botón. -->
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel MaxWidth="1000" Margin="32,40,32,32" Spacing="28">
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="h1" FontSize="30" Text="{Binding Title}"/>
+        <TextBlock Classes="lead" FontSize="16" Text="{Binding Subtitle}"/>
+      </StackPanel>
+
+      <Grid ColumnDefinitions="*,18,*,18,*">
+        <Button Grid.Column="0" Classes="homeCard featured" Command="{Binding PackCommand}">
+          <StackPanel Spacing="14">
+            <Border Classes="homeTile">
+              <Viewbox Width="30" Height="30"><Path Classes="icon onAccent" Data="{StaticResource IconPackage}"/></Viewbox>
+            </Border>
+            <TextBlock Classes="cardTitle" Text="{Binding PackTitle}"/>
+            <TextBlock Classes="cardText" Text="{Binding PackText}"/>
+            <StackPanel Classes="cardAction" Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="{Binding PackAction}"/>
+              <Viewbox Width="18" Height="18"><Path Classes="icon onAccent bold" Data="{StaticResource IconArrowRight}"/></Viewbox>
+            </StackPanel>
+          </StackPanel>
+        </Button>
+
+        <Button Grid.Column="2" Classes="homeCard" Command="{Binding ExtractCommand}">
+          <StackPanel Spacing="14">
+            <Border Classes="homeTile">
+              <Viewbox Width="30" Height="30"><Path Classes="icon accent" Data="{StaticResource IconExtract}"/></Viewbox>
+            </Border>
+            <TextBlock Classes="cardTitle" Text="{Binding ExtractTitle}"/>
+            <TextBlock Classes="cardText" Text="{Binding ExtractText}"/>
+            <StackPanel Classes="cardAction" Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="{Binding ExtractAction}"/>
+              <Viewbox Width="18" Height="18"><Path Classes="icon accent bold" Data="{StaticResource IconArrowRight}"/></Viewbox>
+            </StackPanel>
+          </StackPanel>
+        </Button>
+
+        <Button Grid.Column="4" Classes="homeCard" Command="{Binding VerifyCommand}">
+          <StackPanel Spacing="14">
+            <Border Classes="homeTile">
+              <Viewbox Width="30" Height="30"><Path Classes="icon accent" Data="{StaticResource IconVerify}"/></Viewbox>
+            </Border>
+            <TextBlock Classes="cardTitle" Text="{Binding VerifyTitle}"/>
+            <TextBlock Classes="cardText" Text="{Binding VerifyText}"/>
+            <StackPanel Classes="cardAction" Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="{Binding VerifyAction}"/>
+              <Viewbox Width="18" Height="18"><Path Classes="icon accent bold" Data="{StaticResource IconArrowRight}"/></Viewbox>
+            </StackPanel>
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <Border Classes="callout info">
+        <Grid ColumnDefinitions="Auto,*">
+          <Viewbox Grid.Column="0" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,14,0"><Path Classes="icon" Data="{StaticResource IconDrop}"/></Viewbox>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding Tip}"
+                     FontSize="15"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Center"
+                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+
+  <UserControl.Styles>
+    <Style Selector="Button.homeCard">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="26"/>
+      <Setter Property="MinHeight" Value="236"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="VerticalContentAlignment" Value="Top"/>
+    </Style>
+    <Style Selector="Button.homeCard:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+    <Style Selector="Button.homeCard.featured">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.homeCard.featured:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.homeCard Border.homeTile">
+      <Setter Property="Width" Value="52"/>
+      <Setter Property="Height" Value="52"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.homeCard.featured Border.homeTile">
+      <Setter Property="Background" Value="#29FFFFFF"/>
+    </Style>
+    <Style Selector="Button.homeCard TextBlock.cardTitle">
+      <Setter Property="FontSize" Value="21"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="Button.homeCard TextBlock.cardText">
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="LineHeight" Value="22"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="Button.homeCard StackPanel.cardAction TextBlock">
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+    <Style Selector="Button.homeCard.featured TextBlock.cardTitle, Button.homeCard.featured StackPanel.cardAction TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+    </Style>
+    <Style Selector="Button.homeCard.featured TextBlock.cardText">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentSoftBrush}"/>
+    </Style>
+  </UserControl.Styles>
+</UserControl>

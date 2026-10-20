@@ -63,6 +63,9 @@ public class UpdateService : IUpdateService
     {
         try
         {
+            // Explícito: desde .NET 9 HttpClient deja en manos del handler mirar un token que
+            // ya llegó cancelado, y la cancelación de quien llama tiene que propagarse siempre.
+            ct.ThrowIfCancellationRequested();
             using var response = await _httpClient.GetAsync(LatestReleaseApiUrl, ct);
 
             if (!response.IsSuccessStatusCode)
@@ -178,8 +181,10 @@ public class UpdateService : IUpdateService
         IProgress<double>? progress,
         CancellationToken ct)
     {
-        // Sin huella publicada no se instala nada. Es la única defensa contra que una cuenta
-        // comprometida —o una descarga manipulada en tránsito— reemplace el binario de un perito.
+        // Sin huella publicada no se instala nada. La huella sale de la misma publicación que el
+        // binario: detecta una descarga corrupta o cortada, pero NO protege contra una cuenta de
+        // GitHub comprometida, que puede subir binario y huella juntos. Esa defensa es verificar la
+        // firma Authenticode del ejecutable descargado, pendiente hasta que ForZip se firme.
         if (checksumAsset == null)
         {
             return new UpdateDownloadResult

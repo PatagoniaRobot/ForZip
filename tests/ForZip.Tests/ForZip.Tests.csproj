@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -34,9 +34,57 @@
 
   <ItemGroup>
     <!-- La guía de ayuda vive en el proyecto GUI, que este proyecto no puede referenciar
-         (net8.0 vs net8.0-windows). Se enlaza como contenido para poder verificar que la
+         (net10.0 vs net10.0-windows). Se enlaza como contenido para poder verificar que la
          versión que declara no se desincronice de AppInfo, como ya ocurrió una vez. -->
     <None Include="..\..\src\ForZip.GUI\Help_ForZip.html" Link="Help_ForZip.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- El extractor autónomo se copia tal cual para poder correrlo desde el test 23: es la
+         validación cruzada del formato, y tiene que ejercitar el archivo que se publica. -->
+    <None Include="..\..\Tools\fzs_extract.py" Link="Tools\fzs_extract.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- El script de referencia de la huella de carpeta: tiene que dar lo mismo que ForZip. -->
+    <None Include="..\..\Tools\huella_carpeta.py" Link="Tools\huella_carpeta.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- El abridor HTML también se prueba tal cual se publica: su núcleo corre en Node. -->
+    <None Include="..\..\Tools\Open_FZS.html" Link="Tools\Open_FZS.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Los comandos de la CLI, para cruzar las opciones que leen con la tabla de opciones válidas. -->
+    <None Include="..\..\src\ForZip.Cli\Commands\*.cs" Link="CliSources\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="HtmlOpener\abridor_harness.mjs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- RAR con comentarios y flujos NTFS, creados por los Rar.exe oficiales: son fixtures del motor
+         (submódulo PrZip), que no se pueden generar acá sin Rar.exe. -->
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\cmt_v4.rar" Link="Fixtures\Rar\cmt_v4.rar">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\cmt_v20.rar" Link="Fixtures\Rar\cmt_v20.rar">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Volúmenes con el esquema de nombres viejo (.rar, .r00, .r01…) y un autoextraíble: lo que Extraer acepta
+         además de .rar. -->
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\vol_v4_viejo.r*" Link="Fixtures\Rar\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\m3_v5_pass.rar" Link="Fixtures\Rar\m3_v5_pass.rar">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\m3_v4_pass.rar" Link="Fixtures\Rar\m3_v4_pass.rar">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\PrZip\tests\PrZip.Tests\Formats\Rar\m0_v5_sfx.exe" Link="Fixtures\Rar\m0_v5_sfx.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

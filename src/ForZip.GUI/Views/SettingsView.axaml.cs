@@ -57,4 +57,29 @@ public partial class SettingsView : UserControl
             vm.OutputDirectory = path;
         }
     }
+
+    private async void OnPickCertificateClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null || DataContext is not SettingsViewModel vm)
+        {
+            return;
+        }
+
+        var picked = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            AllowMultiple = false,
+            Title = vm.ButtonFromCertificate,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Certificado / Certificate") { Patterns = new[] { "*.cer", "*.crt", "*.pem", "*.p7s" } }
+            }
+        });
+
+        var path = picked.FirstOrDefault()?.TryGetLocalPath();
+        if (!string.IsNullOrEmpty(path))
+        {
+            vm.LoadSignerFromCertificate(path);
+        }
+    }
 }

@@ -68,7 +68,9 @@ public sealed class SingleInstance : IDisposable
     {
         try
         {
-            using var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.Out);
+            // CurrentUserOnly: el pipe tiene que ser de este mismo usuario. Sin esto, otro usuario de la máquina
+            // que lo creara antes con este nombre recibía las rutas de evidencia que se reenvían.
+            using var client = new NamedPipeClientStream(".", _pipeName, PipeDirection.Out, PipeOptions.CurrentUserOnly);
             client.Connect(2000);
             using var writer = new StreamWriter(client) { AutoFlush = true };
             foreach (var arg in args)
@@ -106,7 +108,7 @@ public sealed class SingleInstance : IDisposable
                 {
                     using var server = new NamedPipeServerStream(
                         _pipeName, PipeDirection.In, 1,
-                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
                     await server.WaitForConnectionAsync(ct).ConfigureAwait(false);
 

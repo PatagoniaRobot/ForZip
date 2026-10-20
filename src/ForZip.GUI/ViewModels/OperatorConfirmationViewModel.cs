@@ -26,12 +26,20 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ForZip.Core.Models;
+using ForZip.Core.Services;
 using ForZip.GUI.Services;
 
 namespace ForZip.GUI.ViewModels;
 
 public partial class OperatorConfirmationViewModel : ObservableObject
 {
+    /// <summary>Muestra en claro la contraseña del certificado (el ojo, como en Empaquetar).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CertificatePasswordChar))]
+    private bool _isCertificatePasswordVisible;
+
+    public char CertificatePasswordChar => IsCertificatePasswordVisible ? '\0' : '●';
+
     [ObservableProperty]
     private string _name = string.Empty;
 
@@ -74,6 +82,48 @@ public partial class OperatorConfirmationViewModel : ObservableObject
     [ObservableProperty]
     private string _timestampUrl = string.Empty;
 
+    /// <summary>Si el diálogo ofrece firmar (no en Hash Batch, que no firma su informe).</summary>
+    public bool OfferSigning { get; init; } = true;
+
+    /// <summary>
+    /// Si el diálogo ofrece el .sha256 del informe: solo Hash Batch, que deja su informe al lado. Empaquetar ya no
+    /// escribe informe, y ese .sha256 lo recalcula cualquiera que edite el informe.
+    /// </summary>
+    public bool OfferExternalHash { get; init; }
+
+    /// <summary>Por qué el certificado elegido no sirve; vacío si no hay problema.</summary>
+    [ObservableProperty]
+    private string _certificateError = string.Empty;
+
+    // Cambiar el certificado o su contraseña invalida el aviso anterior.
+    partial void OnCertificatePathChanged(string value) => CertificateError = string.Empty;
+
+    partial void OnCertificatePasswordChanged(string value) => CertificateError = string.Empty;
+
+    /// <summary>
+    /// Si se pidió firmar, prueba el certificado antes de cerrar el diálogo: una contraseña mal tipeada aparecía
+    /// recién al firmar, y en el perfil Reservado tiraba el sobre ya hecho. Devuelve false si no sirve.
+    /// </summary>
+    public bool TryValidateCertificate(string errorPrefix)
+    {
+        if (!SignManifest || string.IsNullOrWhiteSpace(CertificatePath))
+        {
+            return true;
+        }
+
+        try
+        {
+            SignatureService.EnsureUsableCertificate(
+                CertificatePath, string.IsNullOrEmpty(CertificatePassword) ? null : CertificatePassword);
+            return true;
+        }
+        catch (SigningCertificateException ex)
+        {
+            CertificateError = $"{errorPrefix} {ex.Message}";
+            return false;
+        }
+    }
+
     public OperatorConfirmationViewModel(OperatorInfo info, string? defaultTimestampUrl = null)
     {
         Name = info.Name ?? string.Empty;
@@ -97,7 +147,7 @@ public partial class OperatorConfirmationViewModel : ObservableObject
         CaseNumber = string.IsNullOrWhiteSpace(CaseNumber) ? null : CaseNumber,
         CaseDescription = string.IsNullOrWhiteSpace(CaseDescription) ? null : CaseDescription,
         Court = string.IsNullOrWhiteSpace(Court) ? null : Court,
-        GenerateExternalHash = GenerateExternalHash,
+        GenerateExternalHash = OfferExternalHash && GenerateExternalHash,
         SignManifest = SignManifest && !string.IsNullOrWhiteSpace(CertificatePath),
         CertificatePath = string.IsNullOrWhiteSpace(CertificatePath) ? null : CertificatePath,
         CertificatePassword = string.IsNullOrEmpty(CertificatePassword) ? null : CertificatePassword,

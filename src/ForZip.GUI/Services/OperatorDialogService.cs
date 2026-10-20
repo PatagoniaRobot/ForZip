@@ -34,11 +34,12 @@ namespace ForZip.GUI.Services;
 
 public class OperatorDialogService : IOperatorDialogService
 {
-    public async Task<OperatorConfirmationResult?> ConfirmOperatorAsync(OperatorInfo currentInfo, string? defaultTimestampUrl = null)
+    public async Task<OperatorConfirmationResult?> ConfirmOperatorAsync(OperatorInfo currentInfo, string? defaultTimestampUrl = null, bool offerSigning = true,
+        bool offerExternalHash = false)
     {
         var dialog = new OperatorConfirmationView
         {
-            DataContext = new OperatorConfirmationViewModel(currentInfo, defaultTimestampUrl)
+            DataContext = new OperatorConfirmationViewModel(currentInfo, defaultTimestampUrl) { OfferSigning = offerSigning, OfferExternalHash = offerExternalHash }
         };
 
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

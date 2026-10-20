@@ -36,6 +36,9 @@ public class ReportData
     public bool HasPassword { get; set; }
     public HashSet<HashAlgorithmType> Algorithms { get; set; } = new();
     public string? ZipFilePath { get; set; }
+
+    /// <summary>Formato del paquete al que se refieren ZipFilePath, ZipFileSize y ZipHash.</summary>
+    public ArchiveFormat ArchiveFormat { get; set; } = ArchiveFormat.Zip;
     public long? ZipFileSize { get; set; }
     public string? ZipHash { get; set; }
     public List<HashResult> FileResults { get; set; } = new();
@@ -43,5 +46,26 @@ public class ReportData
     /// <summary>Volúmenes del archivo dividido (vacío para archivo único).</summary>
     public List<VolumeInfo> Volumes { get; set; } = new();
 
+    /// <summary>Archivos que el software de seguridad no dejó leer (vacío si el paquete está completo).</summary>
+    public List<OmittedFile> OmittedFiles { get; set; } = new();
+
+    /// <summary>Huella de cada carpeta hasheada entera (Hash Batch, hash rápido, <c>forzip hash</c>).</summary>
+    public List<Services.FolderDigest> FolderDigests { get; set; } = new();
+
     public string ForZipVersion { get; set; } = AppInfo.DisplayVersion;
+
+    /// <summary>
+    /// Equipo, sistema, usuario y hora del empaquetado. Se toma al crear los datos; armado desde un manifiesto es el
+    /// que este registró, o null si es anterior al esquema 1.4 (el informe dice "no registrado", no inventa).
+    /// </summary>
+    public PackagingEnvironment? Environment { get; set; } = PackagingEnvironment.Capture();
+
+    /// <summary>
+    /// Nombre del manifiesto del que salió este informe, si se armó a pedido después de empaquetar. Null en el
+    /// informe que se arma con los datos recién empaquetados.
+    /// </summary>
+    public string? SourceManifestName { get; set; }
+
+    /// <summary>La verificación hecha antes de armar el informe, si se armó desde Verificar.</summary>
+    public ReportVerification? Verification { get; set; }
 }

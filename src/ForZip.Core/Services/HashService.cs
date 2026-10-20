@@ -64,11 +64,15 @@ public class HashService : IHashService
             BufferSize,
             useAsync: true);
 
-        var hashes = await ComputeHashesCoreAsync(fs, algorithms, totalSize, progress, ct);
+        var hashes = await ComputeHashesCoreAsync(fs, algorithms, totalSize, progress, ct).ConfigureAwait(false);
 
+        // Ruta completa y fecha de modificación, tomadas antes de leer: el informe identifica el archivo por su
+        // ubicación y no solo por el nombre (dos homónimos en carpetas distintas eran indistinguibles).
         return new HashResult
         {
             FilePath = filePath,
+            SourcePath = fileInfo.FullName,
+            ModifiedUtc = fileInfo.LastWriteTimeUtc,
             FileSize = totalSize,
             Hashes = hashes
         };
@@ -93,6 +97,27 @@ public class HashService : IHashService
         return ComputeHashesCoreAsync(stream, algorithms, totalSize: -1, progress: null, ct);
     }
 
+    /// <inheritdoc />
+    public Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
+        Stream stream,
+        HashSet<HashAlgorithmType> algorithms,
+        long totalSize,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
+        if (algorithms == null || algorithms.Count == 0)
+        {
+            throw new ArgumentException("Debe seleccionar al menos un algoritmo.", nameof(algorithms));
+        }
+
+        if (stream == null)
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
+
+        return ComputeHashesCoreAsync(stream, algorithms, totalSize, progress, ct);
+    }
+
     private static async Task<Dictionary<HashAlgorithmType, string>> ComputeHashesCoreAsync(
         Stream stream,
         HashSet<HashAlgorithmType> algorithms,
@@ -112,8 +137,15 @@ public class HashService : IHashService
             var buffer = new byte[BufferSize];
             long totalRead = 0;
 
+            // Con archivos grandes el bucle da miles de vueltas por segundo. Reportar en cada
+            // una inundaría el hilo de UI, así que solo se avisa cuando cambia el por mil.
+            var lastPermille = -1;
+
             int bytesRead;
-            while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), ct)) > 0)
+            // ConfigureAwait(false) es lo que mantiene el cálculo fuera del hilo de UI: sin él,
+            // cada continuación vuelve al Dispatcher y el TransformBlock se come el hilo que
+            // debería estar pintando la ventana (síntoma: ventana en blanco hasta terminar).
+            while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(0, BufferSize), ct).ConfigureAwait(false)) > 0)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -124,9 +156,14 @@ public class HashService : IHashService
                 }
 
                 totalRead += bytesRead;
-                if (totalSize > 0)
+                if (totalSize > 0 && progress != null)
                 {
-                    progress?.Report((double)totalRead / totalSize);
+                    var permille = (int)(totalRead * 1000 / totalSize);
+                    if (permille != lastPermille)
+                    {
+                        lastPermille = permille;
+                        progress.Report((double)totalRead / totalSize);
+                    }
                 }
             }
 
@@ -142,11 +179,9 @@ public class HashService : IHashService
                 hashes[algo] = ToLowerHex(hasher.Hash!);
             }
 
-            // Si el contenido estaba vacío reportamos progreso final
-            if (totalSize == 0)
-            {
-                progress?.Report(1.0);
-            }
+            // Cierre explícito del progreso: el último bloque leído rara vez cae justo en el
+            // 100 %, y un archivo vacío no entra siquiera al bucle.
+            progress?.Report(1.0);
 
             return hashes;
         }

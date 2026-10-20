@@ -5,366 +5,463 @@
              x:DataType="vm:ZipViewModel"
              DragDrop.AllowDrop="True">
 
-  <ScrollViewer>
-    <Panel Margin="4">
+  <Panel>
 
-      <!-- ================== PANTALLA DE RESULTADO ================== -->
-      <StackPanel Spacing="12" IsVisible="{Binding IsResultVisible}">
+    <!-- ================== PANTALLA DE RESULTADO ================== -->
+    <ScrollViewer IsVisible="{Binding IsResultVisible}" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="20" Margin="32,28,32,28" MaxWidth="920">
 
-        <TextBlock Text="{Binding Title}"
-                   FontSize="16" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextPrimaryBrush}"/>
-
-        <Border BorderBrush="{DynamicResource AccentBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="20"
-                Background="{DynamicResource BgCardBrush}">
-          <StackPanel Spacing="14">
-
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <TextBlock Text="✔" FontSize="22"
-                         Foreground="{DynamicResource AccentBrush}"
-                         VerticalAlignment="Center"/>
-              <TextBlock Text="{Binding ResultTitle}"
-                         FontSize="18" FontWeight="Bold"
-                         Foreground="{DynamicResource AccentBrush}"
-                         VerticalAlignment="Center"/>
-            </StackPanel>
-
-            <TextBlock Text="{Binding ResultSubtitle}"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-
-            <TextBlock Text="{Binding ResultNote}"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource WarningBrush}"
-                       IsVisible="{Binding ResultNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-
-            <ItemsControl ItemsSource="{Binding ResultArtifacts}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="vm:ResultArtifactItem">
-                  <Grid ColumnDefinitions="36,*" Margin="0,6">
-                    <TextBlock Grid.Column="0" Text="{Binding Icon}"
-                               FontSize="18"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Top"/>
-                    <StackPanel Grid.Column="1" Spacing="2">
-                      <TextBlock Text="{Binding FileName}"
-                                 FontWeight="SemiBold"
-                                 Foreground="{DynamicResource TextPrimaryBrush}"
-                                 TextTrimming="CharacterEllipsis"/>
-                      <TextBlock Text="{Binding Description}"
-                                 TextWrapping="Wrap"
-                                 FontSize="12"
-                                 Foreground="{DynamicResource TextSecondaryBrush}"/>
-                    </StackPanel>
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <StackPanel Spacing="4"
-                        IsVisible="{Binding ResultZipHash, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-              <TextBlock Text="{Binding LabelResultHash}"
-                         FontWeight="SemiBold"
+        <!-- Lo que pasó, grande y en verde: se entiende sin leer. -->
+        <Border Classes="callout" Background="{DynamicResource SuccessSoftBrush}"
+                BorderBrush="{DynamicResource SuccessBorderBrush}" Padding="26">
+          <Grid ColumnDefinitions="Auto,*">
+            <Border Grid.Column="0" Width="64" Height="64" CornerRadius="32"
+                    Background="{DynamicResource SuccessBrush}" VerticalAlignment="Top" Margin="0,0,20,0">
+              <Viewbox Width="34" Height="34"><Path Classes="icon onAccent" StrokeThickness="2.4" Data="{StaticResource IconCheck}"/></Viewbox>
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="{Binding ResultTitle}" FontSize="24" FontWeight="SemiBold"
+                         Foreground="{DynamicResource SuccessTextBrush}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ResultSubtitle}" FontSize="15" TextWrapping="Wrap"
                          Foreground="{DynamicResource TextSecondaryBrush}"/>
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBox Grid.Column="0"
-                         Text="{Binding ResultZipHash}"
-                         IsReadOnly="True"
-                         FontFamily="Consolas,monospace"
-                         FontSize="12"/>
-                <Button Grid.Column="1"
-                        Content="{Binding LabelCopyHash}"
-                        Command="{Binding CopyResultHashCommand}"
-                        Margin="8,0,0,0"/>
-              </Grid>
             </StackPanel>
-
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
-              <Button Content="{Binding LabelOpenFolder}"
-                      Command="{Binding OpenResultFolderCommand}"
-                      Background="{DynamicResource AccentBrush}"
-                      Foreground="White"
-                      Padding="16,8"/>
-              <Button Content="{Binding LabelNewJob}"
-                      Command="{Binding NewJobCommand}"
-                      Padding="16,8"/>
-            </StackPanel>
-
-          </StackPanel>
-        </Border>
-      </StackPanel>
-
-      <!-- ================== FORMULARIO DE EMPAQUETADO ================== -->
-      <StackPanel Spacing="12" IsVisible="{Binding !IsResultVisible}">
-
-        <DockPanel>
-          <ToggleSwitch DockPanel.Dock="Right"
-                        IsChecked="{Binding IsSimpleMode}"
-                        OnContent="{Binding LabelModeSimple}"
-                        OffContent="{Binding LabelModeAdvanced}"/>
-          <TextBlock Text="{Binding Title}"
-                     FontSize="16" FontWeight="SemiBold"
-                     Foreground="{DynamicResource TextPrimaryBrush}"
-                     VerticalAlignment="Center"/>
-        </DockPanel>
-
-        <TextBlock Text="{Binding LabelSimpleHint}"
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource TextSecondaryBrush}"
-                   IsVisible="{Binding IsSimpleMode}"/>
-
-        <Border x:Name="DropZone"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                Background="Transparent"
-                CornerRadius="4"
-                Padding="24"
-                MinHeight="100">
-          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-            <TextBlock Text="{Binding LabelDropZone}"
-                       Foreground="{DynamicResource TextSecondaryBrush}"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center"/>
-              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="0,8,0,0">
-                <Button x:Name="BrowseFilesButton"
-                        Content="{Binding LabelBrowseFiles}"
-                        Click="OnBrowseFilesClick"/>
-                <Button x:Name="BrowseFolderButton"
-                        Content="{Binding LabelBrowseFolder}"
-                        Click="OnBrowseFolderClick"/>
-              </StackPanel>
-          </StackPanel>
+          </Grid>
         </Border>
 
-        <DockPanel>
-          <Button DockPanel.Dock="Right"
-                  Content="{Binding ButtonClear}"
-                  Command="{Binding ClearAllCommand}"/>
-          <TextBlock Text="{Binding LabelFilesCount}"
-                     Foreground="{DynamicResource TextPrimaryBrush}"
-                     VerticalAlignment="Center"/>
-        </DockPanel>
+        <!-- Paquete incompleto: el antivirus no dejó leer parte de la evidencia. -->
+        <Border Classes="callout warning"
+                IsVisible="{Binding ResultIncompleteNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Text="{Binding ResultIncompleteNote}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+        </Border>
+        <Border Classes="callout warning"
+                IsVisible="{Binding ResultNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Text="{Binding ResultNote}" TextWrapping="Wrap"/>
+        </Border>
+        <!-- Perfil Reservado: sin la clave el contenido no lo recupera nadie. -->
+        <Border Classes="callout warning" IsVisible="{Binding IsSealedResultVisible}">
+          <TextBlock Text="{Binding LabelIrrecoverableWarning}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+        </Border>
 
-        <Border BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="4"
-                MinHeight="80"
-                MaxHeight="200"
-                Background="{DynamicResource BgCardBrush}">
-          <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Files}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="vm:SelectedFileItem">
-                  <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="6,4">
-                    <TextBlock Grid.Column="0"
-                               Text="📄"
-                               FontSize="14"
-                               Margin="0,0,8,0"/>
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding DisplayName}"
+        <!-- Lo que quedó en disco, cada archivo con su explicación. -->
+        <Border Classes="card" Padding="8">
+          <ItemsControl ItemsSource="{Binding ResultArtifacts}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ResultArtifactItem">
+                <Grid ColumnDefinitions="Auto,*" Margin="12,10">
+                  <Border Grid.Column="0" Classes="iconTile" Width="40" Height="40" CornerRadius="10"
+                          VerticalAlignment="Top" Margin="0,0,14,0">
+                    <Viewbox Width="22" Height="22"><Path Classes="icon accent" Data="{Binding IconGeometry}"/></Viewbox>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FileName}" Classes="mono" FontSize="14"
                                Foreground="{DynamicResource TextPrimaryBrush}"
-                               VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Grid.Column="2"
-                               Text="{Binding DisplaySize}"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center"
-                               Margin="8,0"/>
-                    <Button Grid.Column="3"
-                            Width="26" Height="26"
-                            Padding="0"
-                            Classes="Danger"
-                            Command="{Binding $parent[ItemsControl].((vm:ZipViewModel)DataContext).RemoveFileCommand}"
-                            CommandParameter="{Binding}"
-                            ToolTip.Tip="{Binding $parent[ItemsControl].((vm:ZipViewModel)DataContext).TooltipRemoveFile}">
-                      <TextBlock Text="✕"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 TextAlignment="Center"
-                                 Margin="0,0,0,1"/>
-                    </Button>
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
+                    <TextBlock Text="{Binding Description}" Classes="hint"/>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </Border>
 
-        <Border BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="4"
-                Padding="12"
-                Background="{DynamicResource BgCardBrush}">
+        <!-- ================== ACTA DE ENTREGA DE CLAVE ==================
+             Se muestra en pantalla para poder dictarla o transcribirla. NO se guarda
+             sola en disco: lleva la contraseña en claro y su destino es el papel. -->
+        <Border Classes="card" IsVisible="{Binding IsSealedResultVisible}"
+                BorderBrush="{DynamicResource WarningBorderBrush}">
           <StackPanel Spacing="10">
-
-            <!-- Cifrado: disponible en ambos modos -->
-            <StackPanel Spacing="6">
-              <CheckBox Content="{Binding LabelEncryption}"
-                        IsChecked="{Binding IsEncryptionEnabled}"/>
-
-              <StackPanel Orientation="Horizontal"
-                          Spacing="8"
-                          IsVisible="{Binding IsEncryptionEnabled}"
-                          Margin="24,0,0,0">
-                <Button Command="{Binding GeneratePasswordCommand}"
-                        Width="32" Height="32"
-                        Padding="0"
-                        ToolTip.Tip="{Binding TooltipGeneratePassword}">
-                  <TextBlock Text="🔑" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-                <TextBox Text="{Binding Password}"
-                         PasswordChar="{Binding PasswordCharDisplay}"
-                         Width="240"
-                         Watermark="{Binding LabelPasswordPlaceholder}"/>
-                <Button Command="{Binding CopyPasswordCommand}"
-                        Width="32" Height="32"
-                        Padding="0"
-                        ToolTip.Tip="{Binding TooltipCopyPassword}">
-                  <TextBlock Text="📋" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Button>
-                <ToggleButton IsChecked="{Binding IsPasswordVisible}"
-                              Width="32" Height="32"
-                              Padding="0"
-                              ToolTip.Tip="{Binding TooltipTogglePassword}">
-                  <TextBlock Text="👁" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </ToggleButton>
-              </StackPanel>
-            </StackPanel>
-
-            <!-- Opciones técnicas: solo en modo avanzado -->
-            <StackPanel Spacing="10" IsVisible="{Binding !IsSimpleMode}">
-
-              <Separator Background="{DynamicResource BorderBrush}"/>
-
-              <TextBlock Text="{Binding LabelOptions}"
-                         FontWeight="SemiBold"
-                         Foreground="{DynamicResource TextPrimaryBrush}"/>
-
-              <DockPanel>
-                <TextBlock Text="{Binding LabelCompression}"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           VerticalAlignment="Center"
-                           Width="180"/>
-                <ComboBox ItemsSource="{Binding AvailableLevels}"
-                          SelectedItem="{Binding SelectedCompression}"
-                          Width="250"
-                          HorizontalAlignment="Left">
-                  <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding Name}"/>
-                    </DataTemplate>
-                  </ComboBox.ItemTemplate>
-                </ComboBox>
-              </DockPanel>
-
-              <DockPanel>
-                <TextBlock Text="{Binding LabelHashes}"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           VerticalAlignment="Center"
-                           Width="180"/>
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                  <CheckBox Content="MD5" IsChecked="{Binding UseMd5}"/>
-                  <CheckBox Content="SHA-1" IsChecked="{Binding UseSha1}"/>
-                  <CheckBox Content="SHA-256" IsChecked="{Binding UseSha256}"/>
-                  <CheckBox Content="SHA-512" IsChecked="{Binding UseSha512}"/>
-                </StackPanel>
-              </DockPanel>
-
-              <StackPanel Spacing="6">
-                <CheckBox Content="{Binding LabelSplit}"
-                          IsChecked="{Binding IsSplitEnabled}"/>
-
-                <StackPanel Orientation="Horizontal"
-                            Spacing="8"
-                            IsVisible="{Binding IsSplitEnabled}"
-                            Margin="24,0,0,0">
-                  <TextBlock Text="{Binding LabelSplitSize}"
-                             Foreground="{DynamicResource TextSecondaryBrush}"
-                             VerticalAlignment="Center"/>
-                  <ComboBox ItemsSource="{Binding AvailableSplitSizes}"
-                            SelectedItem="{Binding SelectedSplitSize}"
-                            Width="160">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding Name}"/>
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                  <TextBox Text="{Binding CustomSplitMb}"
-                           Width="120"
-                           Watermark="{Binding LabelSplitCustom}"
-                           VerticalContentAlignment="Center"/>
-                </StackPanel>
-              </StackPanel>
+            <TextBlock Classes="h2" Text="{Binding LabelDeliveryAct}"/>
+            <TextBlock Classes="hint" Text="{Binding DeliveryActHint}"/>
+            <Border Classes="subtle">
+              <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Auto">
+                <TextBox Text="{Binding DeliveryActText}"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         FontFamily="{StaticResource PlexMono}"
+                         FontSize="13"
+                         BorderThickness="0"
+                         Background="Transparent"/>
+              </ScrollViewer>
+            </Border>
+            <TextBlock Text="{Binding LabelActSaveWarning}" TextWrapping="Wrap" FontSize="13"
+                       Foreground="{DynamicResource WarningTextBrush}"/>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Content="{Binding LabelCopyAct}" Command="{Binding CopyDeliveryActCommand}"/>
+              <Button Content="{Binding LabelSaveAct}" Click="OnSaveDeliveryActClick"/>
             </StackPanel>
           </StackPanel>
         </Border>
 
-        <StackPanel Spacing="4">
-          <TextBlock Text="{Binding LabelOutput}"
-                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+        <StackPanel Spacing="6"
+                    IsVisible="{Binding ResultZipHash, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <TextBlock Classes="label" Text="{Binding LabelResultHash}"/>
           <Grid ColumnDefinitions="*,Auto">
-            <TextBox Grid.Column="0"
-                     Text="{Binding OutputPath}"
-                     Height="32"
-                     VerticalContentAlignment="Center"/>
-            <Button Grid.Column="1"
-                    Content="..."
-                    Click="OnBrowseOutputClick"
-                    Width="40" Height="32"
-                    Padding="0"
-                    HorizontalContentAlignment="Center"
-                    VerticalContentAlignment="Center"
-                    Margin="6,0,0,0"/>
+            <TextBox Grid.Column="0" Classes="mono" Text="{Binding ResultZipHash}" IsReadOnly="True"/>
+            <Button Grid.Column="1" Content="{Binding LabelCopyHash}" Command="{Binding CopyResultHashCommand}"
+                    Margin="8,0,0,0"/>
+          </Grid>
+          <!-- Lo que de verdad prueba que nadie tocó el paquete: esta huella anotada fuera de ForZip. -->
+          <TextBlock Classes="hint" Text="{Binding LabelResultHashHint}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- El informe en texto ya no se escribe solo: se guarda a pedido, para imprimir o adjuntar. -->
+        <StackPanel Spacing="6" IsVisible="{Binding CanSaveReport}">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Click="OnSaveReportClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="18" Height="18"><Path Classes="icon" Data="{StaticResource IconReport}"/></Viewbox>
+                <TextBlock Text="{Binding LabelSaveReport}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+          <TextBlock Classes="hint" Text="{Binding LabelSaveReportHint}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Command="{Binding OpenResultFolderCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconFolder}"/></Viewbox>
+              <TextBlock Text="{Binding LabelOpenFolder}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button Content="{Binding LabelNewJob}" Command="{Binding NewJobCommand}" MinHeight="46" Padding="20,10"/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- ================== FORMULARIO DE EMPAQUETADO ==================
+         Tres pasos numerados: la evidencia a la izquierda (su lista es lo único que crece),
+         cómo protegerla y dónde guardarla a la derecha, y una barra de acción al pie con
+         el resumen y el único botón principal de la pantalla, que nunca se va de la vista. -->
+    <DockPanel IsVisible="{Binding !IsResultVisible}">
+
+      <!-- Barra de acción -->
+      <Border DockPanel.Dock="Bottom"
+              Background="{DynamicResource BgSecondaryBrush}"
+              BorderBrush="{DynamicResource BorderBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="32,14">
+        <StackPanel Spacing="10">
+          <!-- Carpeta sincronizada: describe el destino. La detección es heurística: avisa sin bloquear. -->
+          <Border Classes="callout warning"
+                  IsVisible="{Binding CloudSyncWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding CloudSyncWarning}" TextWrapping="Wrap" FontSize="13"/>
+          </Border>
+
+          <ProgressBar Minimum="0" Maximum="100"
+                       Value="{Binding ProgressPercent}"
+                       Height="8" CornerRadius="4"
+                       IsVisible="{Binding IsProcessing}"
+                       Foreground="{DynamicResource ProgressFillBrush}"
+                       Background="{DynamicResource ProgressBgBrush}"/>
+
+          <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding IsProcessing}">
+            <TextBlock Grid.Column="0" Text="{Binding ProgressDetail}" Classes="hint"
+                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="12,0">
+              <TextBlock Text="{Binding LabelElapsed}" Classes="hint"/>
+              <TextBlock Text="{Binding ElapsedTime}" Classes="mono" FontSize="13" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+              <TextBlock Text="{Binding LabelRemaining}" Classes="hint"/>
+              <TextBlock Text="{Binding RemainingTime}" Classes="mono" FontSize="13" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}"/>
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="14"
+                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"
+                       Margin="0,0,16,0"/>
+            <Button Grid.Column="1" Content="{Binding ButtonCancel}" Command="{Binding CompressCancelCommand}"
+                    IsVisible="{Binding IsProcessing}" MinHeight="46" Padding="20,10" Margin="0,0,10,0"/>
+            <Button Grid.Column="2" Classes="primary" Command="{Binding CompressCommand}"
+                    IsEnabled="{Binding CanStartCompress}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" StrokeThickness="1.9" Data="{StaticResource IconPackage}"/></Viewbox>
+                <TextBlock Text="{Binding ButtonPack}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
           </Grid>
         </StackPanel>
+      </Border>
 
-        <ProgressBar Minimum="0" Maximum="100"
-                     Value="{Binding ProgressPercent}"
-                     Height="8"
-                     IsVisible="{Binding IsProcessing}"
-                     Foreground="{DynamicResource ProgressFillBrush}"
-                     Background="{DynamicResource ProgressBgBrush}"/>
-
-        <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding IsProcessing}">
-          <TextBlock Grid.Column="0"
-                     Text="{Binding ProgressDetail}"
-                     Foreground="{DynamicResource TextSecondaryBrush}"
-                     FontSize="11"
-                     VerticalAlignment="Center"/>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" Margin="12,0">
-            <TextBlock Text="{Binding LabelElapsed}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
-            <TextBlock Text="{Binding ElapsedTime}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" FontWeight="SemiBold" FontFamily="Consolas,monospace"/>
-          </StackPanel>
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-            <TextBlock Text="{Binding LabelRemaining}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
-            <TextBlock Text="{Binding RemainingTime}" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="11" FontWeight="SemiBold" FontFamily="Consolas,monospace"/>
-          </StackPanel>
-        </Grid>
-
-        <TextBlock Text="{Binding StatusMessage}"
-                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-
-        <StackPanel Orientation="Horizontal"
-                    Spacing="8"
-                    HorizontalAlignment="Center">
-          <Button Content="{Binding ButtonPack}"
-                  Command="{Binding CompressCommand}"
-                  Background="{DynamicResource AccentBrush}"
-                  Foreground="White"
-                  FontSize="15"
-                  Padding="28,10"
-                  IsEnabled="{Binding !IsProcessing}"/>
-          <Button Content="{Binding ButtonCancel}"
-                  Command="{Binding CompressCancelCommand}"
-                  IsVisible="{Binding IsProcessing}"
-                  Padding="20,8"/>
+      <!-- Encabezado: título y modo -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="32,28,32,0">
+        <StackPanel Grid.Column="0" Spacing="4">
+          <TextBlock Classes="h1" Text="{Binding Heading}"/>
+          <TextBlock Classes="lead" Text="{Binding Subtitle}"/>
         </StackPanel>
+        <Border Grid.Column="1" Classes="segmentTrack" VerticalAlignment="Center" Margin="16,0,0,0">
+          <StackPanel Orientation="Horizontal">
+            <RadioButton Theme="{StaticResource SegmentRadio}" GroupName="ZipMode"
+                         Content="{Binding LabelModeSimple}" IsChecked="{Binding IsSimpleMode}"/>
+            <RadioButton Theme="{StaticResource SegmentRadio}" GroupName="ZipMode"
+                         Content="{Binding LabelModeAdvanced}" IsChecked="{Binding !IsSimpleMode}"/>
+          </StackPanel>
+        </Border>
+      </Grid>
 
-      </StackPanel>
-    </Panel>
-  </ScrollViewer>
+      <Grid ColumnDefinitions="*,20,*" Margin="32,20,32,20">
+
+        <!-- ========== Paso 1: la evidencia ========== -->
+        <Border Grid.Column="0" Classes="card">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Classes="stepHeader">
+              <Border Classes="step"><TextBlock Text="1"/></Border>
+              <TextBlock Classes="h2" Text="{Binding LabelStepWhat}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Panel DockPanel.Dock="Top" Margin="0,14,0,0">
+              <Rectangle Stroke="{DynamicResource DashedBorderBrush}" StrokeThickness="1.5"
+                         StrokeDashArray="4,3" RadiusX="12" RadiusY="12"/>
+              <Border x:Name="DropZone"
+                      Background="{DynamicResource BgSubtleBrush}"
+                      CornerRadius="12" Margin="1.5" Padding="16,18">
+                <StackPanel HorizontalAlignment="Center" Spacing="10">
+                  <Viewbox Width="28" Height="28" HorizontalAlignment="Center"><Path Classes="icon" Data="{StaticResource IconDrop}"/></Viewbox>
+                  <TextBlock Text="{Binding LabelDropZone}" FontSize="14"
+                             Foreground="{DynamicResource TextSecondaryBrush}"
+                             HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                    <Button x:Name="BrowseFilesButton" Content="{Binding LabelBrowseFiles}" Click="OnBrowseFilesClick"/>
+                    <Button x:Name="BrowseFolderButton" Content="{Binding LabelBrowseFolder}" Click="OnBrowseFolderClick"/>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </Panel>
+
+            <DockPanel DockPanel.Dock="Top" Margin="0,14,0,8">
+              <Button DockPanel.Dock="Right" Classes="link" Content="{Binding ButtonClear}"
+                      Command="{Binding ClearAllCommand}"/>
+              <TextBlock Text="{Binding LabelFilesCount}" FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <!-- La lista se queda con todo el alto que sobre y es lo único que scrollea. -->
+            <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="10" MinHeight="80">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Files}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:SelectedFileItem">
+                      <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1" Padding="12,6">
+                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                          <Viewbox Grid.Column="0" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <Panel>
+                              <Path Classes="icon accent" Data="{StaticResource IconFolder}" IsVisible="{Binding IsFolder}"/>
+                              <Path Classes="icon" Data="{StaticResource IconFile}" IsVisible="{Binding !IsFolder}"/>
+                            </Panel>
+                          </Viewbox>
+                          <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontSize="14"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Grid.Column="2" Text="{Binding DisplaySize}" Classes="hint"
+                                     VerticalAlignment="Center" Margin="8,0"/>
+                          <Button Grid.Column="3" Classes="ghost icon" Width="34" Height="34"
+                                  Command="{Binding $parent[ItemsControl].((vm:ZipViewModel)DataContext).RemoveFileCommand}"
+                                  CommandParameter="{Binding}"
+                                  ToolTip.Tip="{Binding $parent[ItemsControl].((vm:ZipViewModel)DataContext).TooltipRemoveFile}">
+                            <Viewbox Width="16" Height="16"><Path Classes="icon" StrokeThickness="2" Data="{StaticResource IconClose}"/></Viewbox>
+                          </Button>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Border>
+          </DockPanel>
+        </Border>
+
+        <!-- ========== Pasos 2 y 3 ========== -->
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="20">
+
+            <Border Classes="card">
+              <StackPanel Spacing="16">
+                <StackPanel Classes="stepHeader">
+                  <Border Classes="step"><TextBlock Text="2"/></Border>
+                  <TextBlock Classes="h2" Text="{Binding LabelStepProtect}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Perfil: dos tarjetas que explican cada opción. -->
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="label" Text="{Binding LabelProfile}"/>
+                  <Grid ColumnDefinitions="*,10,*">
+                    <RadioButton Grid.Column="0" Theme="{StaticResource CardRadio}" GroupName="Profile"
+                                 IsChecked="{Binding !IsReservedProfile}" ToolTip.Tip="{Binding LabelProfileStandard}">
+                      <StackPanel Spacing="6">
+                        <Viewbox Width="22" Height="22" HorizontalAlignment="Left"><Path Classes="icon profileIcon" Data="{StaticResource IconPackage}"/></Viewbox>
+                        <TextBlock Text="{Binding LabelProfileStandardName}" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding ProfileStandardDesc}" FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                      </StackPanel>
+                    </RadioButton>
+                    <RadioButton Grid.Column="2" Theme="{StaticResource CardRadio}" GroupName="Profile"
+                                 IsChecked="{Binding IsReservedProfile}" ToolTip.Tip="{Binding LabelProfileReserved}">
+                      <StackPanel Spacing="6">
+                        <Viewbox Width="22" Height="22" HorizontalAlignment="Left"><Path Classes="icon profileIcon" Data="{StaticResource IconEnvelope}"/></Viewbox>
+                        <TextBlock Text="{Binding LabelProfileReservedName}" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding ProfileReservedDesc}" FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                      </StackPanel>
+                    </RadioButton>
+                  </Grid>
+                  <TextBlock Classes="hint" Text="{Binding ProfileHint}"/>
+                </StackPanel>
+
+                <!-- Aviso del perfil Estándar: discreto, no bloqueante, y una sola vez por sesión.
+                     Una advertencia que aparece siempre se vuelve invisible. -->
+                <Border Classes="callout warning" IsVisible="{Binding IsStandardNoticeVisible}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding LabelStandardNotice}" TextWrapping="Wrap" FontSize="13"/>
+                    <Button Command="{Binding DismissStandardNoticeCommand}" Content="{Binding LabelDismissNotice}"
+                            HorizontalAlignment="Right"/>
+                  </StackPanel>
+                </Border>
+
+                <Separator Background="{DynamicResource DividerBrush}" Margin="0"/>
+
+                <!-- Cifrado: disponible en ambos modos -->
+                <StackPanel Spacing="10">
+                  <CheckBox Content="{Binding LabelEncryption}"
+                            FontSize="15"
+                            IsChecked="{Binding IsEncryptionEnabled}"
+                            IsEnabled="{Binding AreProfileGovernedControlsEnabled}"
+                            ToolTip.Tip="{Binding TooltipProfileLocked}"/>
+                  <Grid ColumnDefinitions="*,Auto,Auto,Auto" IsVisible="{Binding IsEncryptionEnabled}">
+                    <TextBox Grid.Column="0"
+                             Classes="mono"
+                             FontSize="15"
+                             Text="{Binding Password}"
+                             PasswordChar="{Binding PasswordCharDisplay}"
+                             IsReadOnly="{Binding IsReservedProfile}"
+                             Watermark="{Binding LabelPasswordPlaceholder}"
+                             ToolTip.Tip="{Binding TooltipProfileLocked}"/>
+                    <ToggleButton Grid.Column="1" Classes="icon" Margin="8,0,0,0"
+                                  IsChecked="{Binding IsPasswordVisible}"
+                                  ToolTip.Tip="{Binding TooltipTogglePassword}">
+                      <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconEye}"/></Viewbox>
+                    </ToggleButton>
+                    <Button Grid.Column="2" Classes="icon" Margin="8,0,0,0"
+                            Command="{Binding CopyPasswordCommand}"
+                            ToolTip.Tip="{Binding TooltipCopyPassword}">
+                      <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconCopy}"/></Viewbox>
+                    </Button>
+                    <Button Grid.Column="3" Classes="icon" Margin="8,0,0,0"
+                            Command="{Binding GeneratePasswordCommand}"
+                            ToolTip.Tip="{Binding TooltipGeneratePassword}">
+                      <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconKey}"/></Viewbox>
+                    </Button>
+                  </Grid>
+                </StackPanel>
+
+                <!-- Formato: disponible en ambos modos; el perfil Reservado lo fija en ZIP
+                     (es lo que lleva el sobre). -->
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="label" Text="{Binding LabelFormat}"/>
+                  <Border Classes="segmentTrack" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                      <RadioButton Theme="{StaticResource SegmentRadio}" GroupName="ArchiveFormat"
+                                   Content="{Binding LabelFormatZip}" IsChecked="{Binding IsZipFormat}"
+                                   IsEnabled="{Binding AreProfileGovernedControlsEnabled}"
+                                   ToolTip.Tip="{Binding TooltipProfileLocked}"/>
+                      <RadioButton Theme="{StaticResource SegmentRadio}" GroupName="ArchiveFormat"
+                                   Content="{Binding LabelFormat7z}" IsChecked="{Binding Is7zFormat}"
+                                   IsEnabled="{Binding AreProfileGovernedControlsEnabled}"
+                                   ToolTip.Tip="{Binding TooltipProfileLocked}"/>
+                    </StackPanel>
+                  </Border>
+                  <TextBlock Classes="hint" Text="{Binding FormatHint}"/>
+                </StackPanel>
+
+                <!-- Opciones técnicas: solo en modo avanzado. -->
+                <StackPanel Spacing="14" IsVisible="{Binding !IsSimpleMode}">
+                  <Separator Background="{DynamicResource DividerBrush}" Margin="0"/>
+                  <TextBlock Classes="overline" Text="{Binding LabelOptions}"/>
+
+                  <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="{Binding LabelCompression}"/>
+                    <ComboBox ItemsSource="{Binding AvailableLevels}"
+                              SelectedItem="{Binding SelectedCompression}"
+                              HorizontalAlignment="Stretch">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+
+                  <StackPanel Spacing="6">
+                    <TextBlock Classes="label" Text="{Binding LabelHashes}"/>
+                    <WrapPanel Orientation="Horizontal">
+                      <CheckBox Content="MD5" IsChecked="{Binding UseMd5}" Margin="0,0,14,0"/>
+                      <CheckBox Content="SHA-1" IsChecked="{Binding UseSha1}" Margin="0,0,14,0"/>
+                      <CheckBox Content="SHA-256" IsChecked="{Binding UseSha256}" Margin="0,0,14,0"/>
+                      <CheckBox Content="SHA-512" IsChecked="{Binding UseSha512}"/>
+                    </WrapPanel>
+                  </StackPanel>
+
+                  <StackPanel Spacing="8">
+                    <CheckBox Content="{Binding LabelSplit}" IsChecked="{Binding IsSplitEnabled}"/>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsSplitEnabled}" Margin="28,0,0,0">
+                      <TextBlock Classes="label" Text="{Binding LabelSplitSize}"/>
+                      <ComboBox ItemsSource="{Binding AvailableSplitSizes}"
+                                SelectedItem="{Binding SelectedSplitSize}"
+                                HorizontalAlignment="Stretch">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <TextBox Text="{Binding CustomSplitMb}" Watermark="{Binding LabelSplitCustom}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card">
+              <StackPanel Spacing="12">
+                <StackPanel Classes="stepHeader">
+                  <Border Classes="step"><TextBlock Text="3"/></Border>
+                  <TextBlock Classes="h2" Text="{Binding LabelStepWhere}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Classes="label" Text="{Binding LabelOutput}"/>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox Grid.Column="0" Classes="mono" Text="{Binding OutputPath}"/>
+                  <Button Grid.Column="1" Classes="icon" Click="OnBrowseOutputClick" Margin="8,0,0,0"
+                          ToolTip.Tip="{Binding LabelOutput}">
+                    <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconFolder}"/></Viewbox>
+                  </Button>
+                </Grid>
+                <TextBlock Classes="hint" Text="{Binding OutputHint}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </DockPanel>
+  </Panel>
+
+  <UserControl.Styles>
+    <Style Selector="StackPanel.stepHeader">
+      <Setter Property="Orientation" Value="Horizontal"/>
+      <Setter Property="Spacing" Value="10"/>
+    </Style>
+    <Style Selector="Border.segmentTrack">
+      <Setter Property="Background" Value="{DynamicResource SegmentTrackBrush}"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="4"/>
+    </Style>
+    <Style Selector="RadioButton:checked Path.profileIcon">
+      <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+  </UserControl.Styles>
 </UserControl>

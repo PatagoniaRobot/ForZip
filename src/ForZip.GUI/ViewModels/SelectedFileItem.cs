@@ -23,6 +23,8 @@
 //
 // =============================================================================
 
+using ForZip.Core.Models;
+
 namespace ForZip.GUI.ViewModels;
 
 public class SelectedFileItem
@@ -32,6 +34,12 @@ public class SelectedFileItem
     public long Size { get; init; }
     public bool IsFolder { get; init; }
     public int FolderFileCount { get; init; }
+
+    /// <summary>
+    /// Los archivos tal como estaban al agregarlos. Al empaquetar se comparan con lo que hay:
+    /// lo que falte queda documentado como no incluido en vez de desaparecer en silencio.
+    /// </summary>
+    public IReadOnlyList<SelectedSourceFile> Snapshot { get; init; } = Array.Empty<SelectedSourceFile>();
 
     public string DisplaySize => FormatSize(Size);
 

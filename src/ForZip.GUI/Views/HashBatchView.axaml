@@ -3,30 +3,29 @@
              xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
              x:Class="ForZip.GUI.Views.HashBatchView"
              x:DataType="vm:HashBatchViewModel"
+             x:Name="Root"
              DragDrop.AllowDrop="True">
 
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" Margin="4">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" Margin="32,28,32,20">
 
-    <TextBlock Grid.Row="0"
-               Text="{Binding Title}"
-               FontSize="16" FontWeight="SemiBold"
-               Foreground="{DynamicResource TextPrimaryBrush}"/>
+    <TextBlock Grid.Row="0" Classes="h1" Text="{Binding Title}"/>
 
     <Border Grid.Row="1"
-            BorderBrush="{DynamicResource BorderBrush}"
+            Background="{DynamicResource BgSubtleBrush}"
+            BorderBrush="{DynamicResource DashedBorderBrush}"
             BorderThickness="1"
-            CornerRadius="4"
+            CornerRadius="12"
             Padding="16"
             MinHeight="80"
-            Margin="0,12,0,0">
+            Margin="0,16,0,0">
       <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
         <TextBlock Text="{Binding LabelDropZone}"
                    Foreground="{DynamicResource TextSecondaryBrush}"
                    HorizontalAlignment="Center"/>
-        <Button Content="{Binding ButtonSelectFiles}"
-                Click="OnBrowseFilesClick"
-                HorizontalAlignment="Center"
-                Margin="0,8,0,0"/>
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" Margin="0,8,0,0">
+          <Button Content="{Binding ButtonSelectFiles}" Click="OnBrowseFilesClick"/>
+          <Button Content="{Binding ButtonSelectFolder}" Click="OnBrowseFolderClick"/>
+        </StackPanel>
       </StackPanel>
     </Border>
 
@@ -47,7 +46,7 @@
       <Button DockPanel.Dock="Right"
               Content="{Binding ButtonClear}"
               Command="{Binding ClearAllCommand}"/>
-      <TextBlock Text="{Binding Rows.Count, StringFormat='Archivos en lista ({0})'}"
+      <TextBlock Text="{Binding LabelFilesInList}"
                  Foreground="{DynamicResource TextPrimaryBrush}"
                  VerticalAlignment="Center"/>
     </DockPanel>
@@ -57,64 +56,153 @@
             BorderThickness="1"
             CornerRadius="4"
             Background="{DynamicResource BgCardBrush}">
-      <ScrollViewer HorizontalScrollBarVisibility="Auto">
-        <ItemsControl ItemsSource="{Binding Rows}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate DataType="vm:HashRowItem">
-              <Grid ColumnDefinitions="40,200,80,*" Margin="6,4">
-                <TextBlock Grid.Column="0"
-                           Text="{Binding Index}"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding FileName}"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="2"
-                           Text="{Binding Size}"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           VerticalAlignment="Center"
-                           Margin="8,0"/>
-                <StackPanel Grid.Column="3" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Sha256}"
-                             FontFamily="Consolas,monospace"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextPrimaryBrush}"
-                             TextTrimming="CharacterEllipsis"
-                             IsVisible="{Binding Sha256, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                  <TextBlock Text="{Binding Md5}"
-                             FontFamily="Consolas,monospace"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextSecondaryBrush}"
-                             TextTrimming="CharacterEllipsis"
-                             IsVisible="{Binding Md5, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                  <TextBlock Text="{Binding Sha1}"
-                             FontFamily="Consolas,monospace"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextSecondaryBrush}"
-                             TextTrimming="CharacterEllipsis"
-                             IsVisible="{Binding Sha1, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                  <TextBlock Text="{Binding Sha512}"
-                             FontFamily="Consolas,monospace"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextSecondaryBrush}"
-                             TextTrimming="CharacterEllipsis"
-                             IsVisible="{Binding Sha512, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                  <TextBlock Text="{Binding StatusText}"
-                             FontStyle="Italic"
-                             FontSize="11"
-                             Foreground="{DynamicResource TextSecondaryBrush}"
-                             IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                </StackPanel>
-              </Grid>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
+      <!-- Grilla: encabezado fijo y una fila por archivo, con el nombre arriba y la carpeta relativa abajo
+           (antes la ruta relativa iba sola en 200 px y el nombre, al final, quedaba cortado). El encabezado
+           y las filas usan las mismas columnas. -->
+      <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="6,6">
+          <Grid ColumnDefinitions="36,2*,90,3*">
+            <TextBlock Grid.Column="0" Text="#" FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+            <TextBlock Grid.Column="1" Text="{Binding HeaderFile}" FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+            <TextBlock Grid.Column="2" Text="{Binding HeaderSize}" FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Right" Margin="0,0,12,0"/>
+            <TextBlock Grid.Column="3" Text="{Binding HeaderHashes}" FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+          </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:HashRowItem">
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="6,5"
+                        Background="Transparent"
+                        ToolTip.Tip="{Binding FullPath}">
+                  <Grid ColumnDefinitions="36,2*,90,3*">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding Index}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                      <TextBlock Text="{Binding ShortName}"
+                                 FontWeight="SemiBold"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding Folder}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 IsVisible="{Binding Folder, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding SizeText}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               HorizontalAlignment="Right"
+                               Margin="0,0,12,0"/>
+                    <StackPanel Grid.Column="3">
+                      <TextBlock Text="{Binding Sha256}"
+                                 FontFamily="{StaticResource PlexMono}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 IsVisible="{Binding Sha256, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                      <TextBlock Text="{Binding Md5}"
+                                 FontFamily="{StaticResource PlexMono}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 IsVisible="{Binding Md5, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                      <TextBlock Text="{Binding Sha1}"
+                                 FontFamily="{StaticResource PlexMono}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 IsVisible="{Binding Sha1, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                      <TextBlock Text="{Binding Sha512}"
+                                 FontFamily="{StaticResource PlexMono}"
+                                 FontSize="11"
+                                 Foreground="{DynamicResource TextSecondaryBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 IsVisible="{Binding Sha512, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                      <!-- "No se pudo leer" en rojo; el gris va como estilo para que la clase le gane. -->
+                      <TextBlock Text="{Binding StatusText}"
+                                 Classes.error="{Binding HasError}"
+                                 FontStyle="Italic"
+                                 FontSize="11"
+                                 TextWrapping="Wrap"
+                                 IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock.Styles>
+                          <Style Selector="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                          </Style>
+                          <Style Selector="TextBlock.error">
+                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+                          </Style>
+                        </TextBlock.Styles>
+                      </TextBlock>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Grid>
     </Border>
 
-    <ProgressBar Grid.Row="5"
+    <!-- Huella de cada carpeta agregada entera: la de ForZip (con nombres) y la de 7-Zip para cotejar -->
+    <Border Grid.Row="5" Classes="card" Margin="0,12,0,0" Padding="14,12" IsVisible="{Binding HasFolderPanel}">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="label" Text="{Binding LabelFolderHeading}"/>
+        <TextBlock Text="{Binding FolderNotice}" TextWrapping="Wrap" FontSize="12"
+                   Foreground="{DynamicResource WarningTextBrush}"
+                   IsVisible="{Binding FolderNotice, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        <ScrollViewer MaxHeight="210" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding FolderDigests}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Spacing="10"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:FolderDigestItem">
+                <StackPanel Spacing="3" ToolTip.Tip="{Binding FolderPath}">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding Summary}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <Grid ColumnDefinitions="170,*,Auto" IsVisible="{Binding HasDigest}">
+                    <TextBlock Grid.Column="0" Text="{Binding LabelForZip}" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <SelectableTextBlock Grid.Column="1" Text="{Binding ForZip}" FontFamily="{StaticResource PlexMono}"
+                                         FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"
+                                         Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <Button Grid.Column="2" Content="{Binding LabelCopy}" Padding="10,3" Margin="8,0,0,0"
+                            Command="{Binding #Root.((vm:HashBatchViewModel)DataContext).CopyTextCommand}"
+                            CommandParameter="{Binding ForZip}"/>
+                  </Grid>
+                  <Grid ColumnDefinitions="170,*,Auto" IsVisible="{Binding HasDigest}">
+                    <TextBlock Grid.Column="0" Text="{Binding LabelSevenZip}" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <SelectableTextBlock Grid.Column="1" Text="{Binding SevenZip}" FontFamily="{StaticResource PlexMono}"
+                                         FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"
+                                         Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Grid.Column="2" Content="{Binding LabelCopy}" Padding="10,3" Margin="8,0,0,0"
+                            Command="{Binding #Root.((vm:HashBatchViewModel)DataContext).CopyTextCommand}"
+                            CommandParameter="{Binding SevenZip}"/>
+                  </Grid>
+                  <TextBlock Text="{Binding Note}" FontSize="12" TextWrapping="Wrap" IsVisible="{Binding HasNote}"
+                             Foreground="{DynamicResource WarningTextBrush}"/>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <TextBlock Classes="hint" Text="{Binding LabelFolderHint}" TextWrapping="Wrap"
+                   IsVisible="{Binding HasFolderDigests}"/>
+      </StackPanel>
+    </Border>
+
+    <ProgressBar Grid.Row="6"
                  Minimum="0" Maximum="100"
                  Value="{Binding ProgressPercent}"
                  Height="8"
@@ -123,22 +211,19 @@
                  Foreground="{DynamicResource ProgressFillBrush}"
                  Background="{DynamicResource ProgressBgBrush}"/>
 
-    <TextBlock Grid.Row="6"
+    <TextBlock Grid.Row="7"
                Text="{Binding StatusMessage}"
                Foreground="{DynamicResource TextSecondaryBrush}"
                Margin="0,8,0,0"/>
 
-    <StackPanel Grid.Row="7"
+    <StackPanel Grid.Row="8"
                 Orientation="Horizontal"
                 Spacing="8"
                 HorizontalAlignment="Center"
                 Margin="0,12,0,0">
-      <Button Content="{Binding ButtonCalculate}"
+      <Button Classes="primary" Content="{Binding ButtonCalculate}"
               Command="{Binding ComputeHashesCommand}"
-              Background="{DynamicResource AccentBrush}"
-              Foreground="White"
-              Padding="20,8"
-              IsEnabled="{Binding !IsProcessing}"/>
+              IsEnabled="{Binding CanStartCompute}"/>
       <Button Content="{Binding ButtonCancel}"
               Command="{Binding ComputeHashesCancelCommand}"
               IsVisible="{Binding IsProcessing}"

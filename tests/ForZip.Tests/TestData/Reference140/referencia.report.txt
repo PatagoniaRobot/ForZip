@@ -1,0 +1,59 @@
+﻿================================================================================
+  INFORME FORENSE DE INTEGRIDAD — ForZip v1.4.0
+  Generado por ForZip — Herramienta forense de compresión y verificación
+  https://github.com/patagoniarobot/forzip
+================================================================================
+
+DATOS DEL OPERADOR
+  Nombre       : Operador de referencia
+
+DATOS DEL CASO
+  Caso Nro.    : REF-140
+
+INFORMACIÓN DEL ENTORNO
+  Fecha y hora : 2026-09-04T12:17:17-03:00
+  Sistema op.  : Microsoft Windows NT 10.0.26200.0
+  Equipo       : EQUIPO-REF
+  Usuario SO   : operador
+  Versión      : ForZip v1.4.0
+
+PARÁMETROS DE LA OPERACIÓN
+  Operación    : Compresión
+  Nivel        : 5 (Normal)
+  Cifrado      : Ninguno
+  Algoritmos   : SHA-256
+  Archivo ZIP  : C:\Evidencia\REF-140\out\referencia.zip
+
+ARCHIVOS PROCESADOS (2 archivos)
+
+  Nro.  Archivo                                    Tamaño         SHA-256
+  ----  -----------------------------------------  -------------  ----------------------------------------------------------------
+     1  src/a.txt                                           42 B  441543b241b056efd5143d2429cd37a6ecf6579468ef2865a0a44f5f225fd6b9
+     2  src/b.txt                                           42 B  352101c696ba1bea50c2bc47630e02920642e2c98d0f86f1c3ecc9f97a2eb85d
+
+  Total de archivos: 2
+  Tamaño total : 84 B
+
+RUTAS DE ORIGEN Y MARCAS TEMPORALES
+  [1] src/a.txt
+    Origen     : C:\Evidencia\REF-140\src\a.txt
+    Modificado (UTC): 2026-01-15T12:00:00Z
+  [2] src/b.txt
+    Origen     : C:\Evidencia\REF-140\src\b.txt
+    Modificado (UTC): 2026-01-15T12:00:00Z
+
+HASH GLOBAL DEL ARCHIVO ZIP
+  Archivo      : referencia.zip
+  Tamaño       : 366 B
+  SHA-256      : ac88978bf3a66bd8b23ef3cafca84c84b3c7c0674dd59d61290acb0921630442
+
+================================================================================
+  DISCLAIMER
+  Este informe fue generado automáticamente por ForZip, una herramienta de
+  software libre distribuida bajo licencia Apache 2.0. Los resultados son
+  proporcionados "TAL CUAL" (AS IS), sin garantías de ningún tipo. Es
+  responsabilidad exclusiva del operador validar la idoneidad de esta
+  herramienta y sus resultados para el uso forense en su jurisdicción.
+  ForZip no reemplaza el criterio profesional del perito actuante.
+================================================================================
+

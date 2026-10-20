@@ -26,7 +26,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ForZip.Core.Interfaces;
+using System.Collections.ObjectModel;
 using ForZip.Core.Models;
+using ForZip.Core.Services;
 using ForZip.GUI.Services;
 
 namespace ForZip.GUI.ViewModels;
@@ -104,11 +106,138 @@ public partial class SettingsViewModel : ViewModelBase
         _shellIntegration = shellIntegration;
         LoadFromConfig();
         RefreshShellStatus();
+
+        try
+        {
+            foreach (var t in _configService.Load().TrustedSigners)
+            {
+                if (SignerTrust.TryNormalize(t.Thumbprint) is { } thumbprint)
+                {
+                    TrustedSigners.Add(new TrustedSignerItem(t.Name, thumbprint));
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
     }
 
     public bool IsShellSupported => _shellIntegration.IsSupported;
 
-    public string Title => _localization.Get("settings").ToUpper();
+    // ---- Firmantes de confianza ----
+
+    /// <summary>Firmantes cuya huella se reconoce al verificar firmas de manifiestos y recibos.</summary>
+    public ObservableCollection<TrustedSignerItem> TrustedSigners { get; } = new();
+
+    [ObservableProperty]
+    private string _newSignerName = string.Empty;
+
+    [ObservableProperty]
+    private string _newSignerThumbprint = string.Empty;
+
+    [ObservableProperty]
+    private string _trustStatusMessage = string.Empty;
+
+    public string TabTrust => _localization.Get("settings_trust");
+    public string LabelTrustDesc => _localization.Get("settings_trust_desc");
+    public string LabelSignerName => _localization.Get("settings_trust_name");
+    public string LabelSignerThumbprint => _localization.Get("settings_trust_thumbprint");
+    public string ButtonAddSigner => _localization.Get("settings_trust_add");
+    public string ButtonFromCertificate => _localization.Get("settings_trust_from_cert");
+    public string LabelNoSigners => _localization.Get("settings_trust_empty");
+    public bool HasNoSigners => TrustedSigners.Count == 0;
+
+    /// <summary>
+    /// Agrega el firmante escrito (o leído de un certificado). Se guarda en el acto: no espera al botón Guardar,
+    /// que es de las otras pestañas.
+    /// </summary>
+    [RelayCommand]
+    private void AddTrustedSigner()
+    {
+        var thumbprint = SignerTrust.TryNormalize(NewSignerThumbprint);
+        if (thumbprint == null)
+        {
+            TrustStatusMessage = _localization.Get("settings_trust_bad_thumbprint");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewSignerName))
+        {
+            TrustStatusMessage = _localization.Get("settings_trust_need_name");
+            return;
+        }
+
+        if (TrustedSigners.Any(t => t.Thumbprint == thumbprint))
+        {
+            TrustStatusMessage = _localization.Get("settings_trust_duplicate");
+            return;
+        }
+
+        TrustedSigners.Add(new TrustedSignerItem(NewSignerName.Trim(), thumbprint));
+        SaveTrustedSigners();
+        NewSignerName = string.Empty;
+        NewSignerThumbprint = string.Empty;
+        TrustStatusMessage = _localization.Get("settings_trust_added");
+    }
+
+    [RelayCommand]
+    private void RemoveTrustedSigner(TrustedSignerItem item)
+    {
+        TrustedSigners.Remove(item);
+        SaveTrustedSigners();
+        TrustStatusMessage = _localization.Get("settings_trust_removed");
+    }
+
+    /// <summary>
+    /// Completa nombre y huella desde un certificado (.cer, .crt, .pem) o desde la firma (.p7s) de un manifiesto
+    /// que se sabe auténtico. Solo la parte pública: no se pide la clave privada.
+    /// </summary>
+    public void LoadSignerFromCertificate(string path)
+    {
+        try
+        {
+            var (thumbprint, subject) = SignerTrust.ReadCertificate(path);
+            NewSignerThumbprint = SignerTrust.Format(thumbprint);
+            NewSignerName = CommonName(subject);
+            TrustStatusMessage = _localization.Get("settings_trust_check_before_add");
+        }
+        catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or IOException or UnauthorizedAccessException)
+        {
+            TrustStatusMessage = $"{_localization.Get("settings_trust_cert_error")} {ex.Message}";
+        }
+    }
+
+    private static string CommonName(string subject)
+    {
+        foreach (var part in subject.Split(','))
+        {
+            var p = part.Trim();
+            if (p.StartsWith("CN=", StringComparison.OrdinalIgnoreCase))
+            {
+                return p[3..];
+            }
+        }
+
+        return subject;
+    }
+
+    private void SaveTrustedSigners()
+    {
+        try
+        {
+            var config = _configService.Load();
+            config.TrustedSigners = TrustedSigners.Select(t => new TrustedSigner { Name = t.Name, Thumbprint = t.Thumbprint }).ToList();
+            _configService.Save(config);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            TrustStatusMessage = $"{_localization.Get("settings_trust_save_error")} {ex.Message}";
+        }
+
+        OnPropertyChanged(nameof(HasNoSigners));
+    }
+
+    public string Title => _localization.Get("settings");
     public string TabGeneral => _localization.Get("settings_general");
     public string TabOperator => _localization.Get("settings_operator");
     public string TabDefaults => _localization.Get("settings_defaults");
@@ -149,6 +278,13 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ButtonSave));
         OnPropertyChanged(nameof(ButtonReset));
         OnPropertyChanged(nameof(StatusMessage));
+        OnPropertyChanged(nameof(TabTrust));
+        OnPropertyChanged(nameof(LabelTrustDesc));
+        OnPropertyChanged(nameof(LabelSignerName));
+        OnPropertyChanged(nameof(LabelSignerThumbprint));
+        OnPropertyChanged(nameof(ButtonAddSigner));
+        OnPropertyChanged(nameof(ButtonFromCertificate));
+        OnPropertyChanged(nameof(LabelNoSigners));
     }
 
     public IEnumerable<int> AvailableLevels => Levels;
@@ -254,9 +390,34 @@ public partial class SettingsViewModel : ViewModelBase
         _localization.SetLanguage(value);
     }
 
+    /// <summary>El tema lo está poniendo la carga de la configuración, no el operador: no se guarda.</summary>
+    private bool _applyingConfig;
+
     partial void OnThemeChanged(string value)
     {
         _themeService.ApplyTheme(value);
+        if (_applyingConfig)
+        {
+            return;
+        }
+
+        // El tema se ve al instante, así que también se guarda al instante: antes había que apretar Guardar y,
+        // si no, al volver a abrir ForZip aparecía el tema anterior.
+        try
+        {
+            var config = _configService.Load();
+            if (config.Theme != value)
+            {
+                config.Theme = value;
+                _configService.Save(config);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private void LoadFromConfig()
@@ -270,7 +431,15 @@ public partial class SettingsViewModel : ViewModelBase
     private void ApplyConfig(AppConfig config)
     {
         Language = config.Language;
-        Theme = config.Theme;
+        _applyingConfig = true;
+        try
+        {
+            Theme = config.Theme;
+        }
+        finally
+        {
+            _applyingConfig = false;
+        }
         OutputDirectory = config.DefaultOutputDirectory ?? string.Empty;
         DefaultCompressionLevel = config.DefaultCompressionLevel;
         CheckForUpdatesOnStartup = config.CheckForUpdatesOnStartup;
@@ -299,4 +468,10 @@ public partial class SettingsViewModel : ViewModelBase
 
     private static string? ToNullIfEmpty(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
+}
+
+/// <summary>Un firmante de confianza en la lista de Ajustes.</summary>
+public sealed record TrustedSignerItem(string Name, string Thumbprint)
+{
+    public string Display => SignerTrust.Format(Thumbprint);
 }

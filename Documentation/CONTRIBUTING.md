@@ -26,7 +26,7 @@ objetivo al contribuir.
 
 ```
 src/
-  ForZip.Core/    Pure .NET 8 library — all business logic, no UI. Unit-testable.
+  ForZip.Core/    Pure .NET 10 library — all business logic, no UI. Unit-testable.
     Interfaces/   Service contracts (IHashService, IZipService, IReportService,
                   IVerificationService, ISignatureService, ILogService, ...).
     Models/       DTOs (ZipOptions, ReportData, ForensicManifest, HashResult, ...).
@@ -46,11 +46,11 @@ covered by tests there.
 
 - Compression hashes each file in a **single pass** (one disk read) and records the
   hashes, source path and UTC modification time.
-- Each operation produces:
-  - a human-readable report `*.report.txt` (UTF-8 with BOM),
-  - a machine-readable manifest `*.manifest.json` — the **source of truth** for
-    automated verification,
-  - an external `*.sha256` sidecar for the report.
+- Each packaging run produces the package and a machine-readable manifest
+  `*.manifest.json` — the **source of truth** for automated verification (schema 1.4
+  also records the packaging computer, OS user and local time). The human-readable
+  report (UTF-8 with BOM) is generated from the manifest on request; since 2.0 there is
+  no report `*.sha256` sidecar, which anyone editing the report could recompute.
 - The manifest may be **digitally signed** (detached CMS/PKCS#7, `*.p7s`) with the
   operator's X.509 certificate.
 - `verify` re-hashes the ZIP contents against the manifest and returns a per-file
@@ -58,12 +58,13 @@ covered by tests there.
   signature status.
 
 Do not reintroduce the old "self-signing line inside the report" model; it was removed
-in favour of the external sidecar + manifest + optional CMS signature.
+in favour of the manifest + optional CMS signature. What proves a package did not change
+is an anchor outside ForZip: its SHA-256 in the chain of custody record, or the signature.
 
 ### 3. Development setup
 
-1. Install the **.NET 8 SDK** (https://dotnet.microsoft.com/download).
-2. Clone the repository.
+1. Install the **.NET 10 SDK** (https://dotnet.microsoft.com/download).
+2. Clone the repository with its submodule (the PrZip engine): `git clone --recurse-submodules https://github.com/PatagoniaRobot/ForZip.git`. If you already cloned it without, run `git submodule update --init`.
 3. `dotnet restore`
 4. `dotnet build`
 5. `dotnet test` — **all tests must pass before you start changing anything.**
@@ -121,7 +122,7 @@ By submitting a contribution you agree it is licensed under the **Apache License
 
 ```
 src/
-  ForZip.Core/    Librería .NET 8 pura — toda la lógica de negocio, sin UI. Testeable.
+  ForZip.Core/    Librería .NET 10 pura — toda la lógica de negocio, sin UI. Testeable.
     Interfaces/   Contratos de servicios (IHashService, IZipService, IReportService,
                   IVerificationService, ISignatureService, ILogService, ...).
     Models/       DTOs (ZipOptions, ReportData, ForensicManifest, HashResult, ...).
@@ -141,11 +142,11 @@ estar cubierta por tests ahí.
 
 - La compresión hashea cada archivo en un **solo pase** (una sola lectura de disco) y
   registra los hashes, la ruta de origen y la marca temporal de modificación en UTC.
-- Cada operación produce:
-  - un informe legible `*.report.txt` (UTF-8 con BOM),
-  - un manifiesto legible por máquina `*.manifest.json` — la **fuente de verdad** para
-    la verificación automática,
-  - un archivo externo `*.sha256` de integridad del informe.
+- Cada empaquetado produce el paquete y un manifiesto legible por máquina
+  `*.manifest.json` — la **fuente de verdad** para la verificación automática (el esquema
+  1.4 registra además el equipo, el usuario de Windows y la hora local del empaquetado).
+  El informe legible (UTF-8 con BOM) se arma a pedido desde el manifiesto; desde 2.0 no
+  hay `*.sha256` del informe, que lo recalculaba cualquiera que editara el informe.
 - El manifiesto puede **firmarse digitalmente** (CMS/PKCS#7 desacoplada, `*.p7s`) con el
   certificado X.509 del operador.
 - `verify` re-hashea el contenido del ZIP contra el manifiesto y devuelve un veredicto
@@ -153,12 +154,13 @@ estar cubierta por tests ahí.
   del ZIP y el estado de la firma.
 
 No reintroduzcas el viejo modelo de "línea auto-firmante dentro del informe"; fue
-eliminado en favor del sidecar externo + manifiesto + firma CMS opcional.
+eliminado en favor del manifiesto + firma CMS opcional. Lo que prueba que un paquete no
+cambió es un ancla fuera de ForZip: su SHA-256 en la planilla de custodia, o la firma.
 
 ### 3. Preparación del entorno
 
-1. Instalá el **SDK de .NET 8** (https://dotnet.microsoft.com/download).
-2. Cloná el repositorio.
+1. Instalá el **SDK de .NET 10** (https://dotnet.microsoft.com/download).
+2. Cloná el repositorio con su submódulo (el motor PrZip): `git clone --recurse-submodules https://github.com/PatagoniaRobot/ForZip.git`. Si ya lo clonaste sin él, ejecutá `git submodule update --init`.
 3. `dotnet restore`
 4. `dotnet build`
 5. `dotnet test` — **todos los tests deben pasar antes de empezar a cambiar algo.**

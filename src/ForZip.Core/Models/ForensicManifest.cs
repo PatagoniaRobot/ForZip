@@ -45,6 +45,12 @@ public class ForensicManifest
     public string? CaseDescription { get; set; }
     public string? Court { get; set; }
 
+    /// <summary>
+    /// Equipo, sistema, usuario y hora local del empaquetado (esquema 1.4). Antes solo estaban en el informe; desde
+    /// que el informe se arma a pedido, el manifiesto es lo único que los conserva. Null en manifiestos anteriores.
+    /// </summary>
+    public PackagingEnvironment? Environment { get; set; }
+
     public OperationType Operation { get; set; }
     public int CompressionLevel { get; set; }
     public bool HasPassword { get; set; }
@@ -52,6 +58,12 @@ public class ForensicManifest
     public List<HashAlgorithmType> Algorithms { get; set; } = new();
 
     /// <summary>Nombre del archivo ZIP (sin ruta) al que pertenece este manifiesto.</summary>
+    /// <summary>
+    /// "7z" cuando el paquete es un 7z (esquema 1.3). Ausente en un ZIP, que sale idéntico al de antes:
+    /// los campos Zip* nombran al paquete cualquiera sea su formato.
+    /// </summary>
+    public string? ArchiveFormat { get; set; }
+
     public string? ZipFileName { get; set; }
     public long? ZipFileSize { get; set; }
 
@@ -71,6 +83,44 @@ public class ForensicManifest
     public List<ManifestVolume>? Volumes { get; set; }
 
     public List<ManifestFileEntry> Files { get; set; } = new();
+
+    /// <summary>
+    /// Archivos seleccionados que no están en el paquete, cada uno con su motivo. <c>null</c>
+    /// cuando el paquete está completo. La verificación no los reclama
+    /// como faltantes: su ausencia está declarada, no es una alteración.
+    /// </summary>
+    public List<ManifestOmittedFile>? OmittedFiles { get; set; }
+}
+
+/// <summary>Un archivo declarado como no incluido, dentro del manifiesto.</summary>
+public class ManifestOmittedFile
+{
+    public string EntryName { get; set; } = string.Empty;
+
+    public string SourcePath { get; set; } = string.Empty;
+
+    public long Size { get; set; }
+
+    public DateTimeOffset ModifiedUtc { get; set; }
+
+    /// <summary>
+    /// Motivo normalizado: <c>security_software_blocked</c>, <c>missing_at_packaging</c>
+    /// (estaba al seleccionar, no al empaquetar), <c>vanished_during_packaging</c> o
+    /// <c>link_not_followed</c> (enlace o junction dentro del origen, con su destino en <see cref="LinkTarget"/>),
+    /// <c>unreadable</c> (inventario de hashes) o <c>folder_unreadable</c> (carpeta que Windows no dejó recorrer;
+    /// el nombre termina en <c>/</c> y el código de Windows dice por qué).
+    /// </summary>
+    public string Reason { get; set; } = "security_software_blocked";
+
+    public string? LinkTarget { get; set; }
+
+    public int? WindowsErrorCode { get; set; }
+
+    public string? SystemMessage { get; set; }
+
+    public DateTimeOffset? SeenAtUtc { get; set; }
+
+    public DateTimeOffset RecordedAtUtc { get; set; }
 }
 
 /// <summary>Un volumen (segmento) del archivo dividido, dentro del manifiesto.</summary>

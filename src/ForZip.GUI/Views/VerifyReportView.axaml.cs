@@ -40,11 +40,10 @@ public partial class VerifyReportView : UserControl
         AddHandler(DragDrop.DropEvent, OnDrop);
     }
 
-    // Acepta tanto informes (.txt) como manifiestos forenses (.json) para verificación de evidencia
-    private static bool IsSupported(string? path) =>
-        !string.IsNullOrEmpty(path) &&
-        (path!.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
-         path.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+    // Se acepta cualquier archivo: sobres, recibos, manifiestos, informes y paquetes (también un volumen suelto,
+    // que lleva a su manifiesto). Lo que no trae contra qué verificarse lo responde la verificación, en ámbar.
+    // Antes solo se aceptaban .txt y .json, y un sobre solo se podía verificar desde el menú contextual.
+    private static bool IsSupported(string? path) => !string.IsNullOrEmpty(path) && File.Exists(path);
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
@@ -64,7 +63,50 @@ public partial class VerifyReportView : UserControl
         var path = first?.TryGetLocalPath();
         if (IsSupported(path))
         {
-            vm.ReportFilePath = path!;
+            vm.ReportFilePath = VerifyReportViewModel.ResolveVerifyTarget(path!);
+        }
+    }
+
+    // Enter en la contraseña verifica, como el botón.
+    private void OnPasswordKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is VerifyReportViewModel vm && vm.VerifyCommand.CanExecute(null))
+        {
+            e.Handled = true;
+            vm.VerifyCommand.Execute(null);
+        }
+    }
+
+    private async void OnSaveReportClick(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null || DataContext is not VerifyReportViewModel vm)
+        {
+            return;
+        }
+
+        var suggested = vm.SuggestedReportFileName;
+        var picked = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = vm.PickerSaveReportTitle,
+            SuggestedFileName = suggested,
+            // Sin esto abría en la última carpeta que se usó en cualquier diálogo, no en la del paquete.
+            SuggestedStartLocation = string.IsNullOrEmpty(vm.ReportFolder)
+                ? null
+                : await topLevel.StorageProvider.TryGetFolderFromPathAsync(vm.ReportFolder),
+            // HTML primero: es el que abre con doble clic quien recibe el informe. El texto sigue disponible.
+            DefaultExtension = "html",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType(vm.PickerReportHtml) { Patterns = new[] { "*.html" } },
+                new FilePickerFileType(vm.PickerReportTxt) { Patterns = new[] { "*.txt" } }
+            }
+        });
+
+        var path = picked?.TryGetLocalPath();
+        if (!string.IsNullOrEmpty(path))
+        {
+            await vm.SaveReportAsync(path, suggested);
         }
     }
 
@@ -79,12 +121,21 @@ public partial class VerifyReportView : UserControl
         var picked = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            Title = "Seleccionar informe o manifiesto forense",
+            Title = vm.LabelPickerTitle,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Informe o manifiesto ForZip")
+                new FilePickerFileType(vm.LabelPickerForZip)
                 {
-                    Patterns = new[] { "*.txt", "*.json" }
+                    Patterns = new[] { "*.fzs", "*.receipt.json", "*.manifest.json", "*.p7s", "*.txt", "*.zip", "*.7z", "*.0*" }
+                },
+                // Lo de terceros, sin manifiesto: se prueba contra sus propios controles. Un .exe se lee, no se ejecuta.
+                new FilePickerFileType(vm.LabelPickerArchives)
+                {
+                    Patterns = new[] { "*.zip", "*.7z", "*.rar", "*.r00", "*.tar", "*.gz", "*.tgz", "*.bz2", "*.tbz2", "*.xz", "*.txz", "*.iso", "*.exe", "*.0*" }
+                },
+                new FilePickerFileType(vm.LabelPickerAll)
+                {
+                    Patterns = new[] { "*" }
                 }
             }
         });
@@ -92,7 +143,7 @@ public partial class VerifyReportView : UserControl
         var path = picked.FirstOrDefault()?.TryGetLocalPath();
         if (!string.IsNullOrEmpty(path))
         {
-            vm.ReportFilePath = path;
+            vm.ReportFilePath = VerifyReportViewModel.ResolveVerifyTarget(path);
         }
     }
 }

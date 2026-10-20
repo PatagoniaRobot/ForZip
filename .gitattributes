@@ -1,0 +1,9 @@
+# El paquete de referencia de 1.4.0 se compara byte a byte contra el que produce la versión
+# actual, y su manifiesto registra el hash y el tamaño de cada archivo. Si git normalizara los
+# finales de línea al clonar, el contenido cambiaría y los tests de no regresión fallarían en
+# cualquier equipo que no sea el que los generó. No se toca nada de esta carpeta.
+tests/ForZip.Tests/TestData/Reference140/** -text
+
+# El extractor autónomo viaja embebido dentro de cada sobre y tiene que servir en cualquier
+# sistema: un shebang terminado en CRLF no arranca en Linux ni en macOS. Se guarda con LF.
+Tools/*.py text eol=lf

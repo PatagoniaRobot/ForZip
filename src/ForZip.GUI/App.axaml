@@ -8,17 +8,328 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
-        <ResourceInclude x:Key="Dark" Source="/Styles/DarkTheme.axaml"/>
-        <ResourceInclude x:Key="Light" Source="/Styles/LightTheme.axaml"/>
+        <ResourceDictionary x:Key="Dark">
+          <ResourceDictionary.MergedDictionaries>
+            <ResourceInclude Source="/Styles/DarkTheme.axaml"/>
+          </ResourceDictionary.MergedDictionaries>
+          <!-- Campos de texto y listas desplegables de Fluent, con los colores del tema. -->
+          <StaticResource x:Key="TextControlBackground" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderStrongBrush"/>
+          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="TextTertiaryBrush"/>
+          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentTextBrush"/>
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderStrongBrush"/>
+          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="TextTertiaryBrush"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <ResourceDictionary.MergedDictionaries>
+            <ResourceInclude Source="/Styles/LightTheme.axaml"/>
+          </ResourceDictionary.MergedDictionaries>
+          <StaticResource x:Key="TextControlBackground" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="TextControlBorderBrush" ResourceKey="BorderStrongBrush"/>
+          <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="TextTertiaryBrush"/>
+          <StaticResource x:Key="TextControlBorderBrushFocused" ResourceKey="AccentTextBrush"/>
+          <StaticResource x:Key="ComboBoxBackground" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="BgInputBrush"/>
+          <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="BorderStrongBrush"/>
+          <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="TextTertiaryBrush"/>
+        </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+      <!-- La iconografía, la tipografía y los controles a medida no dependen del tema: son
+           geometrías y plantillas pintadas con los pinceles del tema vigente. -->
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Styles/Icons.axaml"/>
+        <ResourceInclude Source="/Styles/Controls.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>
 
   <Application.Styles>
-    <FluentTheme/>
+    <!-- El acento de Fluent pinta las casillas, los interruptores, el foco y las barras. -->
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#0B6E6E" RegionColor="#F4F5F7" ErrorText="#B42318"/>
+        <ColorPaletteResources x:Key="Dark" Accent="#14857F" RegionColor="#0F171F" ErrorText="#F49A90"/>
+      </FluentTheme.Palettes>
+    </FluentTheme>
+
+    <!-- Tipografía: IBM Plex Sans en toda la aplicación; nunca menos de 12 px. -->
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="{StaticResource PlexSans}"/>
+      <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <!-- ===== Botones =====
+         Planos, sin relieve: el diseño nuevo separa las piezas con borde y color. El que
+         importa en cada pantalla es el .primary (uno solo por pantalla). -->
+    <Style Selector="Button">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="Padding" Value="14,8"/>
+      <Setter Property="MinHeight" Value="38"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource BgSubtleBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource TextTertiaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SegmentTrackBrush}"/>
+    </Style>
+    <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource BgSubtleBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    </Style>
+
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="CornerRadius" Value="11"/>
+      <Setter Property="Padding" Value="24,10"/>
+      <Setter Property="MinHeight" Value="46"/>
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ProgressBgBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
+    </Style>
+
+    <!-- Botón cuadrado con un ícono solo (mostrar, copiar, generar...). -->
+    <Style Selector="Button.icon, ToggleButton.icon">
+      <Setter Property="Width" Value="40"/>
+      <Setter Property="Height" Value="40"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Sin fondo ni borde (quitar un archivo de la lista, acciones de la bitácora). -->
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource NavHoverBrush}"/>
+    </Style>
+
+    <!-- Tipo enlace. linkButton es el nombre viejo y se conserva. -->
+    <Style Selector="Button.link, Button.linkButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="6,2"/>
+      <Setter Property="MinHeight" Value="0"/>
+    </Style>
+    <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.linkButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+
+    <Style Selector="ToggleButton">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource BgSubtleBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource TextTertiaryBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+
+    <!-- ===== Campos ===== -->
+    <Style Selector="TextBox">
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="12,9"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBox.mono">
+      <Setter Property="FontFamily" Value="{StaticResource PlexMono}"/>
+      <Setter Property="FontSize" Value="13"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="CornerRadius" Value="9"/>
+      <Setter Property="MinHeight" Value="40"/>
+    </Style>
+
+    <!-- Pestañas (Ajustes): del tamaño del texto, no de un título. -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="12,4"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- ===== Superficies ===== -->
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="14"/>
+      <Setter Property="Padding" Value="22"/>
+    </Style>
+    <Style Selector="Border.subtle">
+      <Setter Property="Background" Value="{DynamicResource BgSubtleBrush}"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="12"/>
+    </Style>
+    <Style Selector="Border.callout">
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="12"/>
+      <Setter Property="Padding" Value="16,14"/>
+    </Style>
+    <Style Selector="Border.callout.warning">
+      <Setter Property="Background" Value="{DynamicResource WarningSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.callout.warning TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+    </Style>
+    <Style Selector="Border.callout.error">
+      <Setter Property="Background" Value="{DynamicResource ErrorSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.callout.error TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ErrorTextBrush}"/>
+    </Style>
+    <Style Selector="Border.callout.info">
+      <Setter Property="Background" Value="{DynamicResource BgSubtleBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    </Style>
+
+    <!-- Número de paso (1, 2, 3) -->
+    <Style Selector="Border.step">
+      <Setter Property="Width" Value="26"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="CornerRadius" Value="13"/>
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+    <Style Selector="Border.step TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Cuadradito de color detrás de un ícono -->
+    <Style Selector="Border.iconTile">
+      <Setter Property="Width" Value="46"/>
+      <Setter Property="Height" Value="46"/>
+      <Setter Property="CornerRadius" Value="12"/>
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+    </Style>
+
+    <!-- ===== Texto ===== -->
+    <Style Selector="TextBlock.h1">
+      <Setter Property="FontSize" Value="26"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.h2">
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.lead">
+      <Setter Property="FontSize" Value="15"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="Medium"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="TextBlock.overline">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="LetterSpacing" Value="0.7"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.mono">
+      <Setter Property="FontFamily" Value="{StaticResource PlexMono}"/>
+    </Style>
+
+    <!-- ===== Íconos =====
+         Geometría de 24 x 24 dentro de un Viewbox: Stretch="None" con tamaño fijo mantiene el
+         mismo tamaño óptico entre íconos. El color sigue al contexto. -->
+    <Style Selector="Path.icon">
+      <Setter Property="Width" Value="24"/>
+      <Setter Property="Height" Value="24"/>
+      <Setter Property="Stretch" Value="None"/>
+      <Setter Property="Fill" Value="{x:Null}"/>
+      <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+      <Setter Property="StrokeThickness" Value="1.75"/>
+      <Setter Property="StrokeLineCap" Value="Round"/>
+      <Setter Property="StrokeJoin" Value="Round"/>
+    </Style>
+    <Style Selector="Path.icon.accent">
+      <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+    <Style Selector="Path.icon.onAccent, Button.primary Path.icon">
+      <Setter Property="Stroke" Value="{DynamicResource OnAccentBrush}"/>
+    </Style>
+    <Style Selector="Path.icon.success">
+      <Setter Property="Stroke" Value="{DynamicResource SuccessTextBrush}"/>
+    </Style>
+    <Style Selector="Path.icon.warning">
+      <Setter Property="Stroke" Value="{DynamicResource WarningTextBrush}"/>
+    </Style>
+    <Style Selector="Path.icon.error">
+      <Setter Property="Stroke" Value="{DynamicResource ErrorTextBrush}"/>
+    </Style>
+    <Style Selector="Path.icon.bold">
+      <Setter Property="StrokeThickness" Value="2.4"/>
+    </Style>
+    <Style Selector="Button:disabled Path.icon">
+      <Setter Property="Stroke" Value="{DynamicResource TextTertiaryBrush}"/>
+    </Style>
   </Application.Styles>
 
   <Application.DataTemplates>
+    <DataTemplate DataType="vm:HomeViewModel">
+      <views:HomeView/>
+    </DataTemplate>
     <DataTemplate DataType="vm:ZipViewModel">
       <views:ZipView/>
     </DataTemplate>

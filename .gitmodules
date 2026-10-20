@@ -1,0 +1,3 @@
+[submodule "PrZip"]
+	path = PrZip
+	url = https://github.com/PatagoniaRobot/PrZip.git

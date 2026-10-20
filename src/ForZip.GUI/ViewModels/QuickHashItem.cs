@@ -61,11 +61,27 @@ public partial class QuickHashItem : ObservableObject
     [ObservableProperty]
     private string _modifiedText = string.Empty;
 
+    /// <summary>Estado neutro del archivo: "Pendiente", "Calculando… 42 %" o vacío al terminar.</summary>
     [ObservableProperty]
     private string _statusText = string.Empty;
 
+    /// <summary>Mensaje de error de lectura. Va aparte del estado porque se pinta en rojo.</summary>
+    [ObservableProperty]
+    private string _errorText = string.Empty;
+
     [ObservableProperty]
     private bool _hasError;
+
+    /// <summary>Lo que se anota en el informe cuando no se pudo leer (motivo, código y mensaje de Windows).</summary>
+    public ForZip.Core.Models.OmittedFile? Omission { get; set; }
+
+    /// <summary>Progreso 0–100 del archivo que se está calculando en este momento.</summary>
+    [ObservableProperty]
+    private double _progressPercent;
+
+    /// <summary>La barra por archivo solo aparece mientras ese archivo se está leyendo.</summary>
+    [ObservableProperty]
+    private bool _isProcessing;
 
     public DateTimeOffset? ModifiedUtc { get; set; }
 

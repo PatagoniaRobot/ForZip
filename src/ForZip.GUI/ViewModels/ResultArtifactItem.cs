@@ -23,10 +23,18 @@
 //
 // =============================================================================
 
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+
 namespace ForZip.GUI.ViewModels;
 
 /// <summary>
 /// Un archivo generado por el empaquetado, con su explicación en lenguaje llano
-/// para la pantalla de resultado.
+/// para la pantalla de resultado. <paramref name="Icon"/> es la clave del ícono en Styles/Icons.axaml.
 /// </summary>
-public record ResultArtifactItem(string Icon, string FileName, string Description, string FullPath);
+public record ResultArtifactItem(string Icon, string FileName, string Description, string FullPath)
+{
+    public Geometry? IconGeometry =>
+        Application.Current?.TryFindResource(Icon, out var value) == true ? value as Geometry : null;
+}

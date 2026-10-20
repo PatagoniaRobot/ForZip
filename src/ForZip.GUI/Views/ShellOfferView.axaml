@@ -25,10 +25,7 @@
       <Button Content="{DynamicResource shell_offer_decline}"
               Padding="16,8"
               Click="OnDeclineClick"/>
-      <Button Content="{DynamicResource shell_offer_accept}"
-              Padding="16,8"
-              Background="{DynamicResource AccentBrush}"
-              Foreground="White"
+      <Button Classes="primary" Content="{DynamicResource shell_offer_accept}"
               Click="OnAcceptClick"/>
     </StackPanel>
 

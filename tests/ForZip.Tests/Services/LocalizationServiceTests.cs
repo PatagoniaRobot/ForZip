@@ -72,7 +72,7 @@ public class LocalizationServiceTests
         service.SetLanguage("en");
         var english = service.Get("compress");
 
-        Assert.Equal("Comprimir", spanish);
+        Assert.Equal("Empaquetar", spanish);
         Assert.Equal("Compress", english);
     }
 
@@ -88,5 +88,32 @@ public class LocalizationServiceTests
 
         Assert.Equal("Settings", english);
         Assert.Equal("Ajustes", spanish);
+    }
+
+    [Fact]
+    public void Recursos_AmbosIdiomas_DeclaranExactamenteLasMismasClaves()
+    {
+        // Una clave presente en un solo idioma no se nota en pantalla: Get() cae al inglés
+        // en silencio. El acta de entrega y el informe forense se arman con decenas de
+        // claves, así que la paridad conviene comprobarla acá y no descubrirla en un papel
+        // ya impreso. Se leen los recursos embebidos porque GetAllKeys() devuelve la unión
+        // de los dos idiomas y nunca podría revelar una diferencia.
+        var spanish = LoadResourceKeys("ForZip.Core.Resources.Strings_es.json");
+        var english = LoadResourceKeys("ForZip.Core.Resources.Strings_en.json");
+
+        Assert.Empty(spanish.Except(english));
+        Assert.Empty(english.Except(spanish));
+        Assert.NotEmpty(spanish);
+    }
+
+    private static HashSet<string> LoadResourceKeys(string resourceName)
+    {
+        var assembly = typeof(LocalizationService).Assembly;
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Recurso embebido no encontrado: {resourceName}");
+        using var reader = new StreamReader(stream);
+
+        var strings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(reader.ReadToEnd());
+        return strings!.Keys.ToHashSet(StringComparer.Ordinal);
     }
 }

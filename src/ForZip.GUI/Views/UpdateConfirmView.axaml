@@ -34,10 +34,7 @@
       <Button Name="CancelButton"
               Padding="16,8"
               Click="OnCancelClick"/>
-      <Button Name="AcceptButton"
-              Padding="16,8"
-              Background="{DynamicResource AccentBrush}"
-              Foreground="White"
+      <Button Classes="primary" Name="AcceptButton"
               Click="OnAcceptClick"/>
     </StackPanel>
 

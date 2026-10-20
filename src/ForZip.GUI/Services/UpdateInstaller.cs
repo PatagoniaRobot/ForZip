@@ -129,6 +129,13 @@ public sealed class UpdateInstaller : IUpdateInstaller
             return new InstallOutcome(false, ex.Message);
         }
 
+        // La instancia única se suelta antes de lanzar la versión nueva. Si no, la nueva encontraba el mutex todavía
+        // tomado, le pasaba sus argumentos (ninguno) a esta ventana que se estaba cerrando y salía: no quedaba
+        // ForZip abierto; o, si esta ya no escuchaba, quedaba una ventana sin canal y cada acción del menú
+        // contextual abría otra.
+        App.SingleInstance?.Dispose();
+        App.SingleInstance = null;
+
         try
         {
             Process.Start(new ProcessStartInfo

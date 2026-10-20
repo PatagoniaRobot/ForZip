@@ -4,16 +4,57 @@
              x:Class="ForZip.GUI.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
-  <ScrollViewer>
-    <StackPanel Spacing="12" Margin="4">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="16" Margin="32,28,32,28" MaxWidth="900">
 
-      <TextBlock Text="{Binding Title}"
-                 FontSize="16" FontWeight="SemiBold"
-                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+      <TextBlock Classes="h1" Text="{Binding Title}"/>
 
       <TabControl>
         <TabItem Header="{Binding TabGeneral}">
-          <StackPanel Spacing="12" Margin="8">
+          <StackPanel Spacing="16" Margin="8,16,8,8">
+            <!-- Tema: dos tarjetas con una miniatura de cada uno. Se aplica y se guarda al instante. -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="label" Text="{Binding LabelTheme}"/>
+              <StackPanel Orientation="Horizontal" Spacing="12">
+                <RadioButton Theme="{StaticResource CardRadio}" GroupName="ThemeGroup" Width="200"
+                             IsChecked="{Binding Theme, ConverterParameter=light, Converter={x:Static vm:ThemeRadioConverter.Instance}}">
+                  <StackPanel Spacing="10">
+                    <Border Height="70" CornerRadius="8" Background="#F4F5F7" BorderBrush="#DDE1E6" BorderThickness="1" ClipToBounds="True">
+                      <Grid ColumnDefinitions="44,*">
+                        <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#DDE1E6" BorderThickness="0,0,1,0"/>
+                        <StackPanel Grid.Column="1" Margin="10" Spacing="6">
+                          <Border Height="8" Width="70" CornerRadius="4" Background="#15202B" HorizontalAlignment="Left"/>
+                          <Border Height="26" CornerRadius="5" Background="#FFFFFF" BorderBrush="#DDE1E6" BorderThickness="1"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Width="34" Height="12" CornerRadius="4" Background="#0B6E6E"
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,8"/>
+                      </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding LabelThemeLight}" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                  </StackPanel>
+                </RadioButton>
+                <RadioButton Theme="{StaticResource CardRadio}" GroupName="ThemeGroup" Width="200"
+                             IsChecked="{Binding Theme, ConverterParameter=dark, Converter={x:Static vm:ThemeRadioConverter.Instance}}">
+                  <StackPanel Spacing="10">
+                    <Border Height="70" CornerRadius="8" Background="#0F171F" BorderBrush="#2A3744" BorderThickness="1" ClipToBounds="True">
+                      <Grid ColumnDefinitions="44,*">
+                        <Border Grid.Column="0" Background="#131D26" BorderBrush="#2A3744" BorderThickness="0,0,1,0"/>
+                        <StackPanel Grid.Column="1" Margin="10" Spacing="6">
+                          <Border Height="8" Width="70" CornerRadius="4" Background="#E6EBF0" HorizontalAlignment="Left"/>
+                          <Border Height="26" CornerRadius="5" Background="#17212B" BorderBrush="#2A3744" BorderThickness="1"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Width="34" Height="12" CornerRadius="4" Background="#0E7C76"
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,8"/>
+                      </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding LabelThemeDark}" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                  </StackPanel>
+                </RadioButton>
+              </StackPanel>
+            </StackPanel>
+
             <DockPanel>
               <TextBlock Text="{Binding LabelLanguage}"
                          Foreground="{DynamicResource TextSecondaryBrush}"
@@ -23,21 +64,6 @@
                         SelectedItem="{Binding Language}"
                         Width="200"
                         HorizontalAlignment="Left"/>
-            </DockPanel>
-
-            <DockPanel>
-              <TextBlock Text="{Binding LabelTheme}"
-                         Foreground="{DynamicResource TextSecondaryBrush}"
-                         VerticalAlignment="Center"
-                         Width="180"/>
-              <StackPanel Orientation="Horizontal" Spacing="12">
-                <RadioButton Content="{Binding LabelThemeDark}"
-                             GroupName="ThemeGroup"
-                             IsChecked="{Binding Theme, ConverterParameter=dark, Converter={x:Static vm:ThemeRadioConverter.Instance}}"/>
-                <RadioButton Content="{Binding LabelThemeLight}"
-                             GroupName="ThemeGroup"
-                             IsChecked="{Binding Theme, ConverterParameter=light, Converter={x:Static vm:ThemeRadioConverter.Instance}}"/>
-              </StackPanel>
             </DockPanel>
 
             <DockPanel>
@@ -140,6 +166,70 @@
           </StackPanel>
         </TabItem>
 
+        <TabItem Header="{Binding TabTrust}">
+          <StackPanel Spacing="10" Margin="8">
+            <TextBlock Text="{Binding LabelTrustDesc}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="12"
+                       TextWrapping="Wrap"/>
+
+            <TextBlock Text="{Binding LabelNoSigners}"
+                       IsVisible="{Binding HasNoSigners}"
+                       Foreground="{DynamicResource WarningBrush}"
+                       FontSize="12"
+                       TextWrapping="Wrap"/>
+
+            <ItemsControl ItemsSource="{Binding TrustedSigners}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TrustedSignerItem">
+                  <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,6">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding Display}" FontFamily="{StaticResource PlexMono}" FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                      </StackPanel>
+                      <!-- La X va en su propio TextBlock centrado, como en la lista de Empaquetar: como
+                           Content suelto, la plantilla del botón la dejaba arriba a la izquierda. -->
+                      <Button Grid.Column="1" Width="34" Height="34" MinHeight="0" Padding="0"
+                              Classes="ghost" VerticalAlignment="Center"
+                              HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                              Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).RemoveTrustedSignerCommand}"
+                              CommandParameter="{Binding}">
+                        <Viewbox Width="16" Height="16"><Path Classes="icon" StrokeThickness="2" Data="{StaticResource IconClose}"/></Viewbox>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <DockPanel>
+              <TextBlock Text="{Binding LabelSignerName}" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding NewSignerName}"/>
+            </DockPanel>
+            <DockPanel>
+              <TextBlock Text="{Binding LabelSignerThumbprint}" Width="120"
+                         Foreground="{DynamicResource TextSecondaryBrush}"
+                         VerticalAlignment="Center"/>
+              <TextBox Text="{Binding NewSignerThumbprint}" FontFamily="{StaticResource PlexMono}"/>
+            </DockPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="{Binding ButtonFromCertificate}" Click="OnPickCertificateClick" Padding="16,8"/>
+              <Button Classes="primary" Content="{Binding ButtonAddSigner}"
+                      Command="{Binding AddTrustedSignerCommand}"/>
+            </StackPanel>
+            <TextBlock Text="{Binding TrustStatusMessage}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       FontSize="12"
+                       TextWrapping="Wrap"/>
+          </StackPanel>
+        </TabItem>
+
         <TabItem Header="{Binding TabShell}">
           <StackPanel Spacing="12" Margin="8">
             <TextBlock Text="{Binding LabelShellTitle}"
@@ -152,11 +242,8 @@
 
             <StackPanel Orientation="Horizontal" Spacing="8"
                         IsVisible="{Binding IsShellSupported}">
-              <Button Content="{Binding ButtonShellEnable}"
-                      Command="{Binding EnableShellIntegrationCommand}"
-                      Background="{DynamicResource AccentBrush}"
-                      Foreground="White"
-                      Padding="16,8"/>
+              <Button Classes="primary" Content="{Binding ButtonShellEnable}"
+                      Command="{Binding EnableShellIntegrationCommand}"/>
               <Button Content="{Binding ButtonShellDisable}"
                       Command="{Binding DisableShellIntegrationCommand}"
                       IsEnabled="{Binding IsShellRegistered}"
@@ -178,11 +265,8 @@
       <StackPanel Orientation="Horizontal"
                   Spacing="8"
                   HorizontalAlignment="Center">
-        <Button Content="{Binding ButtonSave}"
-                Command="{Binding SaveCommand}"
-                Background="{DynamicResource AccentBrush}"
-                Foreground="White"
-                Padding="20,8"/>
+        <Button Classes="primary" Content="{Binding ButtonSave}"
+                Command="{Binding SaveCommand}"/>
         <Button Content="{Binding ButtonReset}"
                 Command="{Binding ResetDefaultsCommand}"
                 Padding="20,8"/>

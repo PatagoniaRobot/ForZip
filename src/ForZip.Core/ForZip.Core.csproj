@@ -1,21 +1,48 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- Mantener sincronizada con AppInfo.Version (fuente de verdad en código) -->
-    <Version>1.4.0</Version>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.1" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Motor 7z propio (leer y escribir), sin dependencias: PrZip, submódulo de git en PrZip\.
+         Para compilar ForZip hay que clonar con sus submódulos (ver Documentation/CONTRIBUTING.md). -->
+    <ProjectReference Include="..\..\PrZip\src\PrZip\PrZip.csproj" />
+    <!-- Lector RAR (licencia de unrar, LICENSE-UNRAR.txt): aparte del núcleo; se registra en
+         EngineFormats al cargar ForZip.Core. -->
+    <ProjectReference Include="..\..\PrZip\src\PrZip.Rar\PrZip.Rar.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Strings_es.json" />
     <EmbeddedResource Include="Resources\Strings_en.json" />
+    <!-- El extractor autónomo viaja embebido para poder incluirlo dentro de cada sobre.
+         La fuente única es Tools\fzs_extract.py: acá se enlaza, no se copia. -->
+    <EmbeddedResource Include="..\..\Tools\fzs_extract.py"
+                      LogicalName="ForZip.Core.Resources.fzs_extract.py" />
+    <!-- El abridor HTML se deja junto a cada sobre para quien lo recibe. Misma regla: la
+         fuente única es Tools\Open_FZS.html. -->
+    <EmbeddedResource Include="..\..\Tools\Open_FZS.html"
+                      LogicalName="ForZip.Core.Resources.Open_FZS.html" />
+    <!-- El ícono de la pestaña del informe HTML, que lo lleva adentro (no carga nada de afuera). Fuente única:
+         el logo de la GUI. -->
+    <EmbeddedResource Include="..\ForZip.GUI\Assets\ForZip_logo_32x32.png"
+                      LogicalName="ForZip.Core.Resources.ForZip_logo_32x32.png" />
+    <!-- Las licencias van dentro de los ejecutables: quien actualiza desde la 1.4 recibe solo ForZip.exe (sin
+         LICENSE-UNRAR.txt y con los avisos viejos al lado), y la CLI puede circular sola. Ver LicenseTexts. -->
+    <EmbeddedResource Include="..\..\NOTICE" LogicalName="ForZip.Core.Licenses.NOTICE" />
+    <EmbeddedResource Include="..\..\LICENSE" LogicalName="ForZip.Core.Licenses.LICENSE" />
+    <EmbeddedResource Include="..\..\THIRD-PARTY-NOTICES.txt" LogicalName="ForZip.Core.Licenses.THIRD-PARTY-NOTICES.txt" />
+    <EmbeddedResource Include="..\..\PrZip\src\PrZip.Rar\LICENSE-UNRAR.txt" LogicalName="ForZip.Core.Licenses.LICENSE-UNRAR.txt" />
   </ItemGroup>
 
 </Project>

@@ -52,6 +52,37 @@ public class SignatureService : ISignatureService
     public Task SignAsync(string manifestPath, string pfxPath, string? pfxPassword, CancellationToken ct)
         => SignAsync(manifestPath, pfxPath, pfxPassword, tsaUrl: null, ct);
 
+    /// <summary>
+    /// Comprueba que el certificado se puede usar para firmar: que exista, que la contraseña lo abra y que traiga
+    /// la clave privada. Se llama antes del trabajo largo; si no, un error de tipeo en la contraseña del PFX se
+    /// descubría recién al firmar, con el paquete o el sobre ya hechos.
+    /// </summary>
+    /// <exception cref="SigningCertificateException">El certificado no sirve; el mensaje dice por qué.</exception>
+    public static void EnsureUsableCertificate(string pfxPath, string? pfxPassword)
+    {
+        if (!File.Exists(pfxPath))
+        {
+            throw new SigningCertificateException($"No se encontró el certificado: {pfxPath}");
+        }
+
+        try
+        {
+            using var cert = X509CertificateLoader.LoadPkcs12FromFile(
+                pfxPath, pfxPassword, X509KeyStorageFlags.EphemeralKeySet);
+            if (!cert.HasPrivateKey)
+            {
+                throw new SigningCertificateException(
+                    $"El certificado '{Path.GetFileName(pfxPath)}' no contiene clave privada; no se puede firmar con él.");
+            }
+        }
+        catch (CryptographicException ex)
+        {
+            throw new SigningCertificateException(
+                $"No se pudo abrir el certificado '{Path.GetFileName(pfxPath)}': la contraseña es incorrecta o el archivo está dañado.",
+                ex);
+        }
+    }
+
     public async Task SignAsync(string manifestPath, string pfxPath, string? pfxPassword, string? tsaUrl, CancellationToken ct)
     {
         if (!File.Exists(manifestPath))
@@ -66,7 +97,7 @@ public class SignatureService : ISignatureService
         var content = await File.ReadAllBytesAsync(manifestPath, ct);
 
         // EphemeralKeySet evita persistir la clave privada en el almacén de la máquina
-        using var cert = new X509Certificate2(
+        using var cert = X509CertificateLoader.LoadPkcs12FromFile(
             pfxPath, pfxPassword, X509KeyStorageFlags.EphemeralKeySet);
 
         if (!cert.HasPrivateKey)
@@ -184,10 +215,14 @@ public class SignatureService : ISignatureService
             var signer = cms.SignerInfos.Count > 0 ? cms.SignerInfos[0] : null;
             var subject = signer?.Certificate?.Subject;
             var signedAt = ExtractSigningTime(signer);
-            var (tsUtc, tsAuthority, tsValid) = ExtractTimestamp(signer);
+            var (tsUtc, tsAuthority, tsValid, tsThumbprint) = ExtractTimestamp(signer);
+
+            // El nombre del certificado lo elige quien lo crea: uno autofirmado puede decir "CN=Perito X" sin
+            // serlo. La huella SHA-256 es lo que identifica al certificado y lo que se compara con la de confianza.
+            var thumbprint = signer?.Certificate?.GetCertHashString(HashAlgorithmName.SHA256);
 
             return new SignatureInfo(true, valid, subject, signedAt, details,
-                tsUtc, tsAuthority, tsValid);
+                tsUtc, tsAuthority, tsValid, thumbprint, tsThumbprint);
         }
         catch (Exception ex)
         {
@@ -224,11 +259,11 @@ public class SignatureService : ISignatureService
     /// La validez confirma que el token cubre exactamente esta firma y que la firma de la
     /// propia TSA es correcta; la confianza en la TSA se valida por fuera (su certificado).
     /// </summary>
-    private static (DateTimeOffset? tsUtc, string? tsAuthority, bool? tsValid) ExtractTimestamp(SignerInfo? signer)
+    private static (DateTimeOffset? tsUtc, string? tsAuthority, bool? tsValid, string? tsThumbprint) ExtractTimestamp(SignerInfo? signer)
     {
         if (signer == null)
         {
-            return (null, null, null);
+            return (null, null, null, null);
         }
 
         foreach (var attr in signer.UnsignedAttributes)
@@ -247,7 +282,7 @@ public class SignatureService : ISignatureService
 
                 if (!Rfc3161TimestampToken.TryDecode(data.RawData, out var token, out _))
                 {
-                    return (null, null, false);
+                    return (null, null, false, null);
                 }
 
                 bool tokenValid;
@@ -261,10 +296,11 @@ public class SignatureService : ISignatureService
                     tokenValid = false;
                 }
 
-                return (token.TokenInfo.Timestamp.ToUniversalTime(), tsaCert?.Subject, tokenValid);
+                return (token.TokenInfo.Timestamp.ToUniversalTime(), tsaCert?.Subject, tokenValid,
+                    tsaCert?.GetCertHashString(HashAlgorithmName.SHA256));
             }
         }
 
-        return (null, null, null);
+        return (null, null, null, null);
     }
 }

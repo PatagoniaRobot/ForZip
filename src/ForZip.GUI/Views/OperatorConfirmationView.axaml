@@ -91,10 +91,12 @@
 
           <CheckBox Content="{DynamicResource generate_sidecar}"
                     IsChecked="{Binding GenerateExternalHash}"
+                    IsVisible="{Binding OfferExternalHash}"
                     Margin="0,8,0,0"/>
 
           <CheckBox Content="{DynamicResource sign_manifest}"
-                    IsChecked="{Binding SignManifest}"/>
+                    IsChecked="{Binding SignManifest}"
+                    IsVisible="{Binding OfferSigning}"/>
 
           <StackPanel Spacing="6" IsVisible="{Binding SignManifest}">
             <TextBlock Text="{DynamicResource cert_label}"
@@ -105,9 +107,22 @@
                        Watermark="{DynamicResource cert_path_placeholder}"/>
               <Button Grid.Column="1" Content="..." Width="40" Margin="8,0,0,0" Click="OnBrowseCertClick"/>
             </Grid>
-            <TextBox Text="{Binding CertificatePassword}"
-                     PasswordChar="●"
-                     Watermark="{DynamicResource cert_password_placeholder}"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0"
+                       Text="{Binding CertificatePassword}"
+                       PasswordChar="{Binding CertificatePasswordChar}"
+                       Watermark="{DynamicResource cert_password_placeholder}"/>
+              <ToggleButton Grid.Column="1"
+                            IsChecked="{Binding IsCertificatePasswordVisible}" Classes="icon"
+                            Margin="8,0,0,0"
+                            ToolTip.Tip="{DynamicResource tooltip_toggle_password}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconEye}"/></Viewbox>
+              </ToggleButton>
+            </Grid>
+            <TextBlock Text="{Binding CertificateError}"
+                       IsVisible="{Binding CertificateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource ErrorBrush}"/>
 
             <CheckBox Content="{DynamicResource timestamp_label}"
                       IsChecked="{Binding RequestTimestamp}"
@@ -133,10 +148,7 @@
         <Button Content="{DynamicResource cancel}"
                 Width="100"
                 Click="OnCancelClick"/>
-        <Button Content="{DynamicResource confirm_generate}"
-                Padding="16,8"
-                Background="{DynamicResource AccentBrush}"
-                Foreground="White"
+        <Button Classes="primary" Content="{DynamicResource confirm_generate}"
                 Command="{Binding ConfirmCommand}"
                 Click="OnConfirmClick"/>
       </StackPanel>

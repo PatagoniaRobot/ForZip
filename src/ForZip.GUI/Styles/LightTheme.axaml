@@ -1,19 +1,23 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <!-- Tema claro: paleta forense según 04_Mockups_UI.md -->
-  <Color x:Key="BgPrimaryColor">#f8fafc</Color>
-  <Color x:Key="BgSecondaryColor">#e2e8f0</Color>
-  <Color x:Key="BgCardColor">#ffffff</Color>
-  <Color x:Key="BorderColor">#cbd5e1</Color>
-  <Color x:Key="TextPrimaryColor">#1e293b</Color>
-  <Color x:Key="TextSecondaryColor">#64748b</Color>
-  <Color x:Key="AccentColor">#059669</Color>
-  <Color x:Key="AccentHoverColor">#047857</Color>
-  <Color x:Key="ErrorColor">#dc2626</Color>
-  <Color x:Key="WarningColor">#d97706</Color>
-  <Color x:Key="VioletColor">#6366f1</Color>
-  <Color x:Key="ProgressBgColor">#cbd5e1</Color>
-  <Color x:Key="ProgressFillColor">#059669</Color>
+  <!-- Tema claro (propuesta visual 2026-10-17). Las claves viejas se conservan con los
+       colores nuevos para que todas las vistas cambien juntas; las nuevas (Soft, Text,
+       Strong...) son las que usa el diseño nuevo. AccentBrush es el fondo de los botones
+       principales; para texto e íconos en color de acento va AccentTextBrush, que en el
+       tema oscuro es más claro. -->
+  <Color x:Key="BgPrimaryColor">#F4F5F7</Color>
+  <Color x:Key="BgSecondaryColor">#FFFFFF</Color>
+  <Color x:Key="BgCardColor">#FFFFFF</Color>
+  <Color x:Key="BorderColor">#DDE1E6</Color>
+  <Color x:Key="TextPrimaryColor">#15202B</Color>
+  <Color x:Key="TextSecondaryColor">#4B5563</Color>
+  <Color x:Key="AccentColor">#0B6E6E</Color>
+  <Color x:Key="AccentHoverColor">#095C5C</Color>
+  <Color x:Key="ErrorColor">#B42318</Color>
+  <Color x:Key="WarningColor">#A15C00</Color>
+  <Color x:Key="VioletColor">#5B4FC4</Color>
+  <Color x:Key="ProgressBgColor">#E6E9ED</Color>
+  <Color x:Key="ProgressFillColor">#0B6E6E</Color>
 
   <SolidColorBrush x:Key="BgPrimaryBrush" Color="{StaticResource BgPrimaryColor}"/>
   <SolidColorBrush x:Key="BgSecondaryBrush" Color="{StaticResource BgSecondaryColor}"/>
@@ -28,4 +32,45 @@
   <SolidColorBrush x:Key="VioletBrush" Color="{StaticResource VioletColor}"/>
   <SolidColorBrush x:Key="ProgressBgBrush" Color="{StaticResource ProgressBgColor}"/>
   <SolidColorBrush x:Key="ProgressFillBrush" Color="{StaticResource ProgressFillColor}"/>
+
+  <!-- Superficies -->
+  <SolidColorBrush x:Key="BgSubtleBrush" Color="#F8F9FA"/>
+  <SolidColorBrush x:Key="BgInputBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="BorderStrongBrush" Color="#C9CFD6"/>
+  <SolidColorBrush x:Key="DashedBorderBrush" Color="#AEB6C0"/>
+  <SolidColorBrush x:Key="DividerBrush" Color="#EEF0F3"/>
+  <SolidColorBrush x:Key="TextTertiaryBrush" Color="#5B6572"/>
+  <SolidColorBrush x:Key="SegmentTrackBrush" Color="#E6E9ED"/>
+  <SolidColorBrush x:Key="SegmentOnBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="NavHoverBrush" Color="#F1F3F5"/>
+
+  <!-- Acento -->
+  <SolidColorBrush x:Key="AccentTextBrush" Color="#0B6E6E"/>
+  <SolidColorBrush x:Key="AccentSoftBrush" Color="#E3F1F0"/>
+  <SolidColorBrush x:Key="AccentCardBrush" Color="#F1F8F7"/>
+  <SolidColorBrush x:Key="AccentPressedBrush" Color="#08504F"/>
+  <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="OnAccentSoftBrush" Color="#D6ECEA"/>
+
+  <!-- Estados: sólido (ícono grande), suave (fondo), texto y borde -->
+  <SolidColorBrush x:Key="SuccessBrush" Color="#1E7B46"/>
+  <SolidColorBrush x:Key="SuccessSoftBrush" Color="#E6F4EC"/>
+  <SolidColorBrush x:Key="SuccessTextBrush" Color="#1E6B3E"/>
+  <SolidColorBrush x:Key="SuccessBorderBrush" Color="#A9D8BC"/>
+  <SolidColorBrush x:Key="WarningSoftBrush" Color="#FDF1DC"/>
+  <SolidColorBrush x:Key="WarningTextBrush" Color="#7A4A00"/>
+  <SolidColorBrush x:Key="WarningBorderBrush" Color="#EBC88A"/>
+  <SolidColorBrush x:Key="OnWarningBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="ErrorSoftBrush" Color="#FDE8E6"/>
+  <SolidColorBrush x:Key="ErrorTextBrush" Color="#912018"/>
+  <SolidColorBrush x:Key="ErrorBorderBrush" Color="#F0AFA8"/>
+  <SolidColorBrush x:Key="ReservedSoftBrush" Color="#EEECFB"/>
+  <SolidColorBrush x:Key="ReservedTextBrush" Color="#4436A8"/>
+
+  <!-- Bitácora -->
+  <SolidColorBrush x:Key="LogBgBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="LogHeaderBrush" Color="#F8F9FA"/>
+  <SolidColorBrush x:Key="LogTextBrush" Color="#3B4552"/>
+  <SolidColorBrush x:Key="LogTimeBrush" Color="#6B7480"/>
+  <SolidColorBrush x:Key="LogInfoBrush" Color="#1F5FA8"/>
 </ResourceDictionary>

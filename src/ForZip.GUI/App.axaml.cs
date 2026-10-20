@@ -29,6 +29,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using ForZip.Core.Interfaces;
+using ForZip.Core.Models;
+using ForZip.Core.Sealing;
 using ForZip.Core.Services;
 using ForZip.Core.Shell;
 using ForZip.GUI.Services;
@@ -45,21 +47,29 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        ForZip.GUI.Services.AltCodeInput.Register();
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // "Calcular hash" desde el menú contextual no levanta la aplicación entera: abre
-            // solo su ventanita de resultados, como hace 7-Zip.
-            if (Program.IsQuickHashMode(desktop.Args))
+            // Calcular hash, Extraer y Verificar desde el menú contextual no levantan la aplicación entera: abren
+            // solo su ventana, como hace 7-Zip (ver ShellWindowRouting).
+            switch (ShellWindowRouting.WindowFor(desktop.Args))
             {
-                StartQuickHashMode(desktop);
-            }
-            else
-            {
-                StartFullApplication(desktop);
+                case ShellWindow.QuickHash:
+                    StartQuickHashMode(desktop);
+                    break;
+                case ShellWindow.Extract:
+                    StartShellExtractMode(desktop);
+                    break;
+                case ShellWindow.Verify:
+                    StartShellVerifyMode(desktop);
+                    break;
+                default:
+                    StartFullApplication(desktop);
+                    break;
             }
         }
 
@@ -121,6 +131,129 @@ public partial class App : Application
         desktop.Exit += (_, _) => SingleInstance?.Dispose();
     }
 
+    /// <summary>
+    /// Idioma, tema y bitácora de una ventana del menú contextual. La bitácora de evidencia escribe en el mismo
+    /// archivo que la ventana completa y, con el perfil Reservado guardado, sin nombres ni rutas desde la primera
+    /// entrada.
+    /// </summary>
+    private (LocalizationService localization, ConfigService config, ILogService log) StartShellWindowServices()
+    {
+        var localization = new LocalizationService();
+        var configService = new ConfigService();
+        var config = configService.Load();
+        localization.SetLanguage(config.Language);
+        new ThemeService().ApplyTheme(config.Theme);
+        UpdateResources(localization);
+
+        ILogService logService = new LogService
+        {
+            UiDispatcher = action => Dispatcher.UIThread.Post(action),
+            RedactedMarker = localization.Get("log_redacted_marker"),
+            Redacted = config.Profile == ConfidentialityProfile.Reserved
+        };
+        if (logService.Redacted)
+        {
+            logService.Info(localization.Get("log_profile_reserved"));
+        }
+
+        if (Environment.IsPrivilegedProcess)
+        {
+            logService.Warning(localization.Get("log_running_elevated"));
+        }
+
+        return (localization, configService, logService);
+    }
+
+    /// <summary>
+    /// Instancia primaria de una ventana del menú contextual: las demás invocaciones de la misma ventana (un proceso
+    /// por archivo seleccionado) le reenvían sus rutas, y la ventana las suma y se trae al frente.
+    /// </summary>
+    private static void ListenForForwardedRequests(IClassicDesktopStyleApplicationLifetime desktop, Window window,
+                                                   ShellWindow kind, Action<ShellRequest> add)
+    {
+        SingleInstance?.StartServer(forwardedArgs =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                try
+                {
+                    var forwarded = ShellArgs.Parse(forwardedArgs);
+                    if (forwarded == null || ShellWindowRouting.WindowFor(forwarded) != kind)
+                    {
+                        return;
+                    }
+
+                    add(forwarded);
+                    if (window.WindowState == WindowState.Minimized)
+                    {
+                        window.WindowState = WindowState.Normal;
+                    }
+                    window.Activate();
+                }
+                catch
+                {
+                    // No dejar que un reenvío malformado afecte a la ventana en uso.
+                }
+            }));
+
+        desktop.Exit += (_, _) => SingleInstance?.Dispose();
+    }
+
+    /// <summary>"Extraer aquí", "Extraer en Nombre\" y "Extraer…": la ventana de extracción.</summary>
+    private void StartShellExtractMode(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var (localization, configService, logService) = StartShellWindowServices();
+        var hashService = new HashService();
+        var zipService = new ZipService(hashService);
+        var signatureService = new SignatureService();
+        var verificationService = new VerificationService(hashService, signatureService);
+        var sealedOpener = new SealedPackageOpener(new SealingService(), verificationService);
+        var cloudSyncDetector = new CloudSyncDetector();
+        var confirmDialog = new ConfirmDialogService();
+
+        var viewModel = new ShellExtractViewModel(
+            () => new UnzipViewModel(zipService, localization, configService, logService, sealedOpener,
+                                     cloudSyncDetector, confirmDialog),
+            logService, localization);
+        var window = new ShellExtractWindow { DataContext = viewModel };
+        desktop.MainWindow = window;
+
+        if (ShellArgs.Parse(desktop.Args) is { } request)
+        {
+            viewModel.AddRequest(request);
+        }
+
+        ListenForForwardedRequests(desktop, window, ShellWindow.Extract, viewModel.AddRequest);
+    }
+
+    /// <summary>"Verificar": la ventana del veredicto.</summary>
+    private void StartShellVerifyMode(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var (localization, configService, logService) = StartShellWindowServices();
+        var hashService = new HashService();
+        var zipService = new ZipService(hashService);
+        var reportService = new ReportService(localization);
+        var signatureService = new SignatureService();
+        var verificationService = new VerificationService(hashService, signatureService);
+        var sealingService = new SealingService();
+        var receiptService = new ReceiptService(hashService, signatureService);
+        var sealedVerificationService = new SealedVerificationService(
+            sealingService, receiptService, signatureService, verificationService, hashService);
+
+        var viewModel = new ShellVerifyViewModel(
+            () => new VerifyReportViewModel(reportService, hashService, verificationService,
+                                            sealedVerificationService, localization, configService, zipService),
+            logService, localization);
+        var window = new ShellVerifyWindow { DataContext = viewModel };
+        desktop.MainWindow = window;
+
+        if (ShellArgs.Parse(desktop.Args) is { } request)
+        {
+            viewModel.AddRequest(request);
+        }
+
+        ListenForForwardedRequests(desktop, window, ShellWindow.Verify, viewModel.AddRequest);
+    }
+
     private void StartFullApplication(IClassicDesktopStyleApplicationLifetime desktop)
     {
         // Composition root: instanciamos servicios con sus dependencias resueltas a mano
@@ -140,6 +273,17 @@ public partial class App : Application
         var themeService = new ThemeService();
         var operatorDialog = new OperatorDialogService();
         var shellIntegration = new ShellIntegrationService(localization);
+        // Perfil Reservado: el sobre sellado, su recibo y el acta de entrega (1.5.0).
+        var sealingService = new SealingService();
+        var receiptService = new ReceiptService(hashService, signatureService);
+        var sealedPackageBuilder = new SealedPackageBuilder(sealingService, receiptService);
+        var sealedVerificationService = new SealedVerificationService(
+            sealingService, receiptService, signatureService, verificationService, hashService);
+        var actService = new DeliveryActService(localization);
+        var cloudSyncDetector = new CloudSyncDetector();
+        var sealedPackageOpener = new SealedPackageOpener(sealingService, verificationService);
+        var confirmDialog = new ConfirmDialogService();
+
         var updateService = new UpdateService();
         var updateInstaller = new UpdateInstaller();
         var updateDialog = new UpdateDialogService(localization);
@@ -151,7 +295,10 @@ public partial class App : Application
         var mainViewModel = new MainWindowViewModel(
             zipService, hashService, passwordService,
             reportService, verificationService, signatureService, configService, localization, themeService,
-            logService, operatorDialog, shellIntegration, updateService, updateInstaller, updateDialog);
+            logService, operatorDialog, shellIntegration,
+            sealedPackageBuilder, sealedVerificationService, actService, cloudSyncDetector,
+            sealedPackageOpener, confirmDialog,
+            updateService, updateInstaller, updateDialog);
 
         UpdateResources(localization);
 
@@ -193,7 +340,7 @@ public partial class App : Application
                     mainViewModel.HandleShellRequest(ShellArgs.Parse(forwardedArgs));
                     if (mainWindow.WindowState == WindowState.Minimized)
                     {
-                        mainWindow.WindowState = WindowState.Normal;
+                        mainWindow.WindowState = mainWindow.StateBeforeMinimize;
                     }
                     mainWindow.Activate();
                 }

@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<!--
+  Cero red, verificable: esta política impide cualquier conexión, descarga o recurso externo.
+  La página solo puede ejecutar el código que está escrito acá abajo.
+-->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Abrir sobre ForZip</title>
+<!--
+  =============================================================================
+   Abridor de sobres ForZip (.fzs) — página autónoma y sin conexión
+  =============================================================================
+
+   Author : Claudio Andino
+   Email  : claudio@patagoniarobot.com
+
+   Copyright (c) 2026 Claudio Andino
+   Developed under the Patagonia Robot initiative
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at:
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+  =============================================================================
+
+   Qué hace: abre un sobre .fzs con su contraseña y guarda el contenedor interno, que es
+   un ZIP común. No extrae ni ejecuta la evidencia, no instala nada y no se conecta a
+   ningún lado. Implementa Documentation/Formato_FZS_v1.md, escrito para que un tercero
+   abra un sobre sin leer el código de ForZip; esta página se escribió desde ese documento.
+
+   El código está sin minificar a propósito: cualquiera puede leer lo que hace.
+-->
+<style>
+  :root {
+    --bg: #f4f5f2;
+    --card: #ffffff;
+    --text: #1d2321;
+    --muted: #5b6662;
+    --line: #d9ddd8;
+    --accent: #1f7a55;
+    --accent-text: #ffffff;
+    --ok-bg: #e5f3ec;
+    --ok-text: #155c3f;
+    --bad-bg: #fbe9e7;
+    --bad-text: #9b2b1e;
+    --warn-bg: #fdf3dc;
+    --warn-text: #7a5410;
+    --field: #ffffff;
+    --track: #e4e7e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141816;
+      --card: #1d2320;
+      --text: #e6ebe8;
+      --muted: #9aa6a0;
+      --line: #313a36;
+      --accent: #3fae80;
+      --accent-text: #0d1310;
+      --ok-bg: #173226;
+      --ok-text: #8fdcb8;
+      --bad-bg: #3a1d19;
+      --bad-text: #f2a597;
+      --warn-bg: #352a12;
+      --warn-text: #ecc777;
+      --field: #151a18;
+      --track: #2a322e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 32px 16px 48px; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .lang { display: flex; gap: 4px; flex-shrink: 0; }
+  .lang button {
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    border-radius: 6px; padding: 2px 10px; font: inherit; font-size: 0.85rem; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] { color: var(--text); border-color: var(--muted); }
+  .step {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .step[aria-disabled="true"] { opacity: 0.5; }
+  .step h2 { font-size: 1.05rem; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; }
+  .num {
+    display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-text); font-size: 0.85rem; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .step p { margin: 0 0 12px; }
+  .hint { color: var(--muted); font-size: 0.9rem; }
+  button.primary, label.primary {
+    display: inline-block; background: var(--accent); color: var(--accent-text);
+    border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-weight: 600;
+    cursor: pointer;
+  }
+  button.secondary {
+    background: transparent; color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 16px; font: inherit; cursor: pointer;
+  }
+  button:disabled { cursor: not-allowed; opacity: 0.6; }
+  button:focus-visible, label.primary:focus-within, input:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+  input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  input[type="password"] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--field); color: var(--text); font: inherit; margin-bottom: 12px;
+  }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 12px 0 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .mono { font-family: Consolas, "Cascadia Mono", ui-monospace, monospace; font-size: 0.92em; }
+  .msg { border-radius: 8px; padding: 10px 14px; margin-top: 12px; }
+  .msg:empty { display: none; }
+  .msg.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .msg.bad { background: var(--bad-bg); color: var(--bad-text); }
+  .msg.warn { background: var(--warn-bg); color: var(--warn-text); }
+  .msg.info { background: var(--track); color: var(--text); }
+  progress {
+    width: 100%; height: 12px; border-radius: 6px; overflow: hidden; border: 0;
+    background: var(--track); accent-color: var(--accent); margin: 12px 0 4px;
+  }
+  progress::-webkit-progress-bar { background: var(--track); }
+  progress::-webkit-progress-value { background: var(--accent); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .hidden { display: none !important; }
+  footer { color: var(--muted); font-size: 0.85rem; margin-top: 24px; }
+  footer p { margin: 4px 0; }
+  @media (max-width: 480px) {
+    dl { grid-template-columns: 1fr; gap: 0; }
+    dd { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1 data-t="titulo">Abrir sobre ForZip</h1>
+    </div>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+  <p class="lead" data-t="bajada">Esta página abre un sobre <span class="mono">.fzs</span> con su contraseña y guarda el contenido como un archivo ZIP común. Funciona sin conexión: no envía nada a ningún lado y no instala nada.</p>
+
+  <noscript><div class="msg bad">Esta página necesita JavaScript habilitado. / This page requires JavaScript.</div></noscript>
+  <div id="incompatible" class="msg bad hidden"></div>
+
+  <section class="step" id="paso1">
+    <h2><span class="num">1</span><span data-t="paso1">Elegir el sobre</span></h2>
+    <p class="hint" data-t="paso1-ayuda">El archivo termina en .fzs. No hace falta el recibo ni el acta.</p>
+    <label class="primary" for="archivo"><span data-t="elegir">Elegir archivo .fzs</span>
+      <input type="file" id="archivo" accept=".fzs">
+    </label>
+    <dl id="datos" class="hidden">
+      <dt data-t="dato-archivo">Archivo</dt><dd id="d-archivo"></dd>
+      <dt data-t="dato-id">Identificador</dt><dd id="d-id" class="mono"></dd>
+      <dt data-t="dato-fecha">Sellado</dt><dd id="d-fecha"></dd>
+      <dt data-t="dato-tamano">Tamaño del contenido</dt><dd id="d-tamano"></dd>
+    </dl>
+    <div id="msg1" class="msg" role="status"></div>
+  </section>
+
+  <section class="step" id="paso2" aria-disabled="true">
+    <h2><span class="num">2</span><span data-t="paso2">Escribir la contraseña</span></h2>
+    <form id="form-clave" autocomplete="off">
+      <input type="password" id="clave" autocomplete="off" spellcheck="false" disabled
+             aria-label="Contraseña" data-t-aria="clave-aria">
+      <button type="submit" class="primary" id="btn-comprobar" disabled data-t="comprobar">Comprobar contraseña</button>
+    </form>
+    <p class="hint" data-t="paso2-ayuda">La contraseña no se guarda ni se muestra. Comprobarla lleva unos segundos.</p>
+    <div id="msg2" class="msg" role="status"></div>
+  </section>
+
+  <section class="step" id="paso3" aria-disabled="true">
+    <h2><span class="num">3</span><span data-t="paso3">Guardar el contenido</span></h2>
+    <p class="hint" data-t="paso3-ayuda">Elija dónde guardar el ZIP. Si algo falla a mitad de camino, no queda nada a medio descifrar.</p>
+    <div class="row">
+      <button type="button" class="primary" id="btn-guardar" disabled data-t="guardar">Elegir dónde guardar y abrir</button>
+      <button type="button" class="secondary hidden" id="btn-cancelar" data-t="cancelar">Cancelar</button>
+    </div>
+    <div id="avance" class="hidden">
+      <progress id="barra" max="100" value="0"></progress>
+      <div id="avance-texto" class="hint"></div>
+    </div>
+    <div id="msg3" class="msg" role="status"></div>
+  </section>
+
+  <footer>
+    <p data-t="pie1">El resultado es el ZIP que estaba adentro del sobre. Esta página no lo descomprime ni ejecuta nada: ábralo después con el Explorador de Windows o con 7-Zip.</p>
+    <p data-t="pie2">Para la verificación forense completa (manifiesto, hashes por archivo y firma), use ForZip.</p>
+    <p class="mono">Formato .fzs v1 · ForZip · Apache 2.0</p>
+  </footer>
+</main>
+
+<!--
+  =============================================================================
+   Núcleo: apertura de un sobre según Documentation/Formato_FZS_v1.md, §10.1
+  =============================================================================
+   No toca la página. Recibe un Blob (el .fzs) y una función que escribe bytes, y
+   devuelve errores con un código. Así se puede probar tal cual fuera del navegador.
+-->
+<script id="fzs-nucleo">
+"use strict";
+
+const FzsNucleo = (() => {
+  const MAGIC = "FZSEAL01";
+  const FORMAT_VERSION = 1;
+  const FIXED_LEN = 14;     // magic (8) + formatVer (2) + headerLen (4)
+  const TAG_LEN = 16;       // tag GCM por chunk
+  const NONCE_BASE_LEN = 8; // nonceBase (8) + índice (4) = nonce de 12 bytes
+
+  /**
+   * Error de apertura con un código estable. La interfaz traduce el código a un mensaje;
+   * los detalles (índice de chunk, tamaños) acompañan para que el mensaje sea concreto.
+   *
+   *   formato        no es un sobre ForZip, o el header está mal formado
+   *   version        formatVer distinto de 1 (detail.version)
+   *   algoritmo      kdf o cifrado que este lector no implementa
+   *   truncado       el archivo mide menos de lo que el header declara
+   *   sobrante       el archivo mide más de lo que el header declara
+   *   contrasena     falla el chunk 0: contraseña incorrecta o sobre alterado desde el inicio
+   *   alterado       falla un chunk posterior (detail.chunk)
+   *   cancelado      lo pidió quien está usando la página
+   */
+  class FzsError extends Error {
+    constructor(code, detail) {
+      super(code);
+      this.name = "FzsError";
+      this.code = code;
+      this.detail = detail || {};
+    }
+  }
+
+  async function readBytes(blob, start, end) {
+    return new Uint8Array(await blob.slice(start, end).arrayBuffer());
+  }
+
+  function fromBase64(text) {
+    const binary = atob(text);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  function uint32LE(value) {
+    const bytes = new Uint8Array(4);
+    new DataView(bytes.buffer).setUint32(0, value, true);
+    return bytes;
+  }
+
+  function concat(...parts) {
+    const total = parts.reduce((sum, p) => sum + p.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const p of parts) {
+      out.set(p, offset);
+      offset += p.length;
+    }
+    return out;
+  }
+
+  function isCount(value) {
+    return Number.isSafeInteger(value) && value >= 0;
+  }
+
+  /**
+   * Pasos 1 a 6 de §10.1: lee y valida el header sin pedir contraseña. Conserva los bytes
+   * crudos del JSON, porque el AAD se calcula sobre ellos y no sobre una reserialización.
+   */
+  async function readHeader(blob) {
+    if (blob.size < FIXED_LEN) {
+      throw new FzsError("formato");
+    }
+
+    const fixed = await readBytes(blob, 0, FIXED_LEN);
+    const magic = String.fromCharCode(...fixed.subarray(0, 8));
+    if (magic !== MAGIC) {
+      throw new FzsError("formato");
+    }
+
+    const view = new DataView(fixed.buffer);
+    const version = view.getUint16(8, true);
+    if (version !== FORMAT_VERSION) {
+      throw new FzsError("version", { version });
+    }
+
+    const headerLen = view.getUint32(10, true);
+    if (FIXED_LEN + headerLen > blob.size) {
+      throw new FzsError("truncado");
+    }
+
+    const raw = await readBytes(blob, FIXED_LEN, FIXED_LEN + headerLen);
+    let header;
+    try {
+      header = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(raw));
+    } catch {
+      throw new FzsError("formato");
+    }
+
+    const kdf = header && header.kdf;
+    const cipher = header && header.cipher;
+    if (!kdf || !cipher) {
+      throw new FzsError("formato");
+    }
+    if (kdf.algo !== "PBKDF2-HMAC-SHA256" || cipher.algo !== "AES-256-GCM") {
+      throw new FzsError("algoritmo", { kdf: String(kdf.algo), cipher: String(cipher.algo) });
+    }
+
+    const iterations = kdf.iterations;
+    const chunkSize = cipher.chunkSize;
+    const payloadSize = header.payloadSize;
+    const totalChunks = header.totalChunks;
+    // Formato_FZS_v1 §3: con más iteraciones el header se rechaza sin derivar (si no, la pestaña
+    // quedaría colgada antes de descubrir que el header fue alterado).
+    if (!isCount(iterations) || iterations < 1 || iterations > 10000000 || !isCount(chunkSize) || chunkSize < 1
+        || !isCount(payloadSize) || !isCount(totalChunks)) {
+      throw new FzsError("formato");
+    }
+
+    let salt;
+    let nonceBase;
+    try {
+      salt = fromBase64(kdf.saltB64);
+      nonceBase = fromBase64(cipher.nonceBaseB64);
+    } catch {
+      throw new FzsError("formato");
+    }
+    if (nonceBase.length !== NONCE_BASE_LEN || salt.length === 0) {
+      throw new FzsError("formato");
+    }
+
+    if (totalChunks !== Math.ceil(payloadSize / chunkSize)) {
+      throw new FzsError("formato");
+    }
+
+    const expectedSize = FIXED_LEN + headerLen + payloadSize + TAG_LEN * totalChunks;
+    if (blob.size < expectedSize) {
+      throw new FzsError("truncado", { expected: expectedSize, actual: blob.size });
+    }
+    if (blob.size > expectedSize) {
+      throw new FzsError("sobrante", { expected: expectedSize, actual: blob.size });
+    }
+
+    return {
+      raw,
+      packageId: String(header.packageId || ""),
+      sealedAtUtc: String(header.sealedAtUtc || ""),
+      iterations,
+      salt,
+      chunkSize,
+      nonceBase,
+      payloadSize,
+      totalChunks,
+      dataOffset: FIXED_LEN + headerLen
+    };
+  }
+
+  /** Paso 8 de §10.1. La clave queda como no extraíble: ni esta página puede leerla. */
+  async function deriveKey(password, info) {
+    const material = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", hash: "SHA-256", salt: info.salt, iterations: info.iterations },
+      material,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]);
+  }
+
+  async function headerHashOf(info) {
+    return new Uint8Array(await crypto.subtle.digest("SHA-256", info.raw));
+  }
+
+  /**
+   * Descifra el chunk i. isFinal sale de totalChunks, que está autenticado, y nunca del fin
+   * del archivo: deducirlo del EOF volvería indetectable el truncamiento (§6.2).
+   */
+  async function decryptChunk(blob, info, key, headerHash, i) {
+    const plainLen = Math.min(info.chunkSize, info.payloadSize - i * info.chunkSize);
+    const start = info.dataOffset + i * (info.chunkSize + TAG_LEN);
+    const block = await readBytes(blob, start, start + plainLen + TAG_LEN);
+    if (block.length !== plainLen + TAG_LEN) {
+      throw new FzsError("truncado", { chunk: i });
+    }
+
+    const index = uint32LE(i);
+    const isFinal = new Uint8Array([i === info.totalChunks - 1 ? 1 : 0]);
+    try {
+      const plain = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: concat(info.nonceBase, index),
+          additionalData: concat(headerHash, index, isFinal),
+          tagLength: 128
+        },
+        key,
+        block);
+      return new Uint8Array(plain);
+    } catch {
+      throw new FzsError(i === 0 ? "contrasena" : "alterado", { chunk: i });
+    }
+  }
+
+  /**
+   * Comprueba la contraseña descifrando solo el primer chunk (§10.3). No escribe nada, así
+   * que una contraseña equivocada no llega a pedir dónde guardar.
+   */
+  async function checkKey(blob, info, key) {
+    if (info.totalChunks === 0) {
+      return;
+    }
+    await decryptChunk(blob, info, key, await headerHashOf(info), 0);
+  }
+
+  /**
+   * Paso 9 de §10.1: descifra todos los chunks en orden y entrega cada uno a `write`.
+   * Mantiene a lo sumo dos chunks en memoria (el que se escribe y el siguiente, que ya se
+   * está descifrando), así que un sobre de decenas de GB no crece en RAM.
+   */
+  async function open({ blob, info, key, write, onProgress, signal }) {
+    const headerHash = await headerHashOf(info);
+    const total = info.totalChunks;
+    const next = (i) => {
+      const p = decryptChunk(blob, info, key, headerHash, i);
+      // Si falla mientras se escribe el anterior, el error se recoge en la vuelta siguiente.
+      p.catch(() => {});
+      return p;
+    };
+
+    let pending = total > 0 ? next(0) : null;
+    let written = 0;
+    for (let i = 0; i < total; i++) {
+      if (signal && signal.aborted) {
+        throw new FzsError("cancelado");
+      }
+      const plain = await pending;
+      pending = i + 1 < total ? next(i + 1) : null;
+      await write(plain);
+      written += plain.length;
+      if (onProgress) {
+        onProgress({ chunk: i + 1, totalChunks: total, bytes: written, totalBytes: info.payloadSize });
+      }
+    }
+
+    // Paso 7 de §10.2: lo escrito tiene que medir exactamente lo declarado.
+    if (written !== info.payloadSize) {
+      throw new FzsError("alterado", { chunk: total - 1 });
+    }
+    return written;
+  }
+
+  return { FzsError, readHeader, deriveKey, checkKey, open };
+})();
+</script>
+
+<!--
+  =============================================================================
+   Interfaz
+  =============================================================================
+-->
+<script id="fzs-interfaz">
+"use strict";
+
+(() => {
+  const TEXTOS = {
+    es: {
+      "titulo": "Abrir sobre ForZip",
+      "bajada": "Esta página abre un sobre <span class=\"mono\">.fzs</span> con su contraseña y guarda el contenido como un archivo ZIP común. Funciona sin conexión: no envía nada a ningún lado y no instala nada.",
+      "paso1": "Elegir el sobre",
+      "paso1-ayuda": "El archivo termina en .fzs. No hace falta el recibo ni el acta.",
+      "elegir": "Elegir archivo .fzs",
+      "dato-archivo": "Archivo",
+      "dato-id": "Identificador",
+      "dato-fecha": "Sellado",
+      "dato-tamano": "Tamaño del contenido",
+      "paso2": "Escribir la contraseña",
+      "clave-aria": "Contraseña",
+      "comprobar": "Comprobar contraseña",
+      "paso2-ayuda": "La contraseña no se guarda ni se muestra. Comprobarla lleva unos segundos.",
+      "paso3": "Guardar el contenido",
+      "paso3-ayuda": "Elija dónde guardar el ZIP. Si algo falla a mitad de camino, no queda nada a medio descifrar.",
+      "guardar": "Elegir dónde guardar y abrir",
+      "cancelar": "Cancelar",
+      "pie1": "El resultado es el ZIP que estaba adentro del sobre. Esta página no lo descomprime ni ejecuta nada: ábralo después con el Explorador de Windows o con 7-Zip.",
+      "pie2": "Para la verificación forense completa (manifiesto, hashes por archivo y firma), use ForZip.",
+      "sobre-ok": "Sobre válido. Escriba la contraseña.",
+      "comprobando": "Comprobando la contraseña…",
+      "clave-ok": "Contraseña correcta.",
+      "clave-vacia": "Escriba la contraseña.",
+      "abriendo": "Abriendo el sobre…",
+      "avance": "{0} de {1} · bloque {2} de {3}",
+      "listo": "Listo. Se guardó «{0}» ({1}). Es un ZIP común: ábralo con el Explorador de Windows o con 7-Zip.",
+      "salida-cancelada": "No se eligió dónde guardar. No se escribió nada.",
+      "salir-trabajando": "Se está abriendo el sobre. Si cierra la página, no se guarda nada.",
+      "err-formato": "Este archivo no es un sobre ForZip válido.",
+      "err-version": "Este sobre usa la versión {0} del formato y esta página lee la versión 1. Hace falta una versión más nueva del abridor.",
+      "err-algoritmo": "Este sobre usa un cifrado que esta página no conoce ({0} / {1}). Hace falta una versión más nueva del abridor.",
+      "err-truncado": "El sobre está incompleto: mide menos de lo que declara. Puede haberse cortado al copiarlo o descargarlo. Consiga una copia completa y verifíquela con el recibo.",
+      "err-sobrante": "El sobre tiene datos de más: mide más de lo que declara. Puede haber sido alterado. Verifíquelo con el recibo antes de seguir.",
+      "err-contrasena": "La contraseña es incorrecta, o el sobre está alterado desde el inicio.",
+      "err-alterado": "El sobre está alterado: falla la autenticación del bloque {0}. No se guardó nada.",
+      "err-cancelado": "Cancelado. No se guardó nada.",
+      "err-espacio": "No hay espacio suficiente en el disco de destino. No se guardó nada.",
+      "err-permiso": "El navegador no dio permiso para escribir en ese lugar. No se guardó nada.",
+      "err-escritura": "No se pudo escribir el archivo de salida ({0}). No se guardó nada.",
+      "err-lectura": "No se pudo leer el sobre ({0}). Si está en un disco externo o en red, cópielo primero al equipo.",
+      "err-interno": "Error inesperado: {0}",
+      "err-sin-guardado": "Este navegador no permite guardar archivos grandes de forma segura. Use Microsoft Edge o Google Chrome actualizados.",
+      "err-sin-cripto": "Este navegador no tiene las funciones de cifrado necesarias, o la página no se abrió como archivo local. Use Microsoft Edge o Google Chrome actualizados.",
+      "nota-vacio": "Si el navegador ya había creado un archivo vacío con ese nombre, se puede borrar."
+    },
+    en: {
+      "titulo": "Open a ForZip envelope",
+      "bajada": "This page opens a <span class=\"mono\">.fzs</span> envelope with its password and saves the content as an ordinary ZIP file. It works offline: it sends nothing anywhere and installs nothing.",
+      "paso1": "Choose the envelope",
+      "paso1-ayuda": "The file ends in .fzs. The receipt and the handover record are not needed.",
+      "elegir": "Choose .fzs file",
+      "dato-archivo": "File",
+      "dato-id": "Identifier",
+      "dato-fecha": "Sealed",
+      "dato-tamano": "Content size",
+      "paso2": "Enter the password",
+      "clave-aria": "Password",
+      "comprobar": "Check password",
+      "paso2-ayuda": "The password is neither stored nor shown. Checking it takes a few seconds.",
+      "paso3": "Save the content",
+      "paso3-ayuda": "Choose where to save the ZIP. If anything fails halfway, nothing half-decrypted is left behind.",
+      "guardar": "Choose where to save and open",
+      "cancelar": "Cancel",
+      "pie1": "The result is the ZIP that was inside the envelope. This page neither unpacks nor runs anything: open it afterwards with Windows Explorer or 7-Zip.",
+      "pie2": "For full forensic verification (manifest, per-file hashes and signature), use ForZip.",
+      "sobre-ok": "Valid envelope. Enter the password.",
+      "comprobando": "Checking the password…",
+      "clave-ok": "Password correct.",
+      "clave-vacia": "Enter the password.",
+      "abriendo": "Opening the envelope…",
+      "avance": "{0} of {1} · block {2} of {3}",
+      "listo": "Done. “{0}” was saved ({1}). It is an ordinary ZIP: open it with Windows Explorer or 7-Zip.",
+      "salida-cancelada": "No destination was chosen. Nothing was written.",
+      "salir-trabajando": "The envelope is being opened. If you close the page, nothing is saved.",
+      "err-formato": "This file is not a valid ForZip envelope.",
+      "err-version": "This envelope uses format version {0} and this page reads version 1. A newer version of the opener is needed.",
+      "err-algoritmo": "This envelope uses a cipher this page does not know ({0} / {1}). A newer version of the opener is needed.",
+      "err-truncado": "The envelope is incomplete: it is smaller than it declares. It may have been cut short while copying or downloading. Get a complete copy and check it against the receipt.",
+      "err-sobrante": "The envelope has extra data: it is larger than it declares. It may have been altered. Check it against the receipt before going on.",
+      "err-contrasena": "The password is wrong, or the envelope was altered from the start.",
+      "err-alterado": "The envelope has been altered: block {0} fails authentication. Nothing was saved.",
+      "err-cancelado": "Cancelled. Nothing was saved.",
+      "err-espacio": "There is not enough space on the destination disk. Nothing was saved.",
+      "err-permiso": "The browser did not grant permission to write there. Nothing was saved.",
+      "err-escritura": "The output file could not be written ({0}). Nothing was saved.",
+      "err-lectura": "The envelope could not be read ({0}). If it is on an external or network drive, copy it to this computer first.",
+      "err-interno": "Unexpected error: {0}",
+      "err-sin-guardado": "This browser cannot save large files safely. Use an up-to-date Microsoft Edge or Google Chrome.",
+      "err-sin-cripto": "This browser lacks the required encryption functions, or the page was not opened as a local file. Use an up-to-date Microsoft Edge or Google Chrome.",
+      "nota-vacio": "If the browser had already created an empty file with that name, it can be deleted."
+    }
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const { FzsError } = FzsNucleo;
+
+  let lang = (navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en";
+  let envelope = null;   // { blob, info, key }
+  let working = null;    // AbortController mientras se abre
+  let lastMessages = {}; // para volver a traducirlos al cambiar de idioma
+
+  // Un argumento { bytes } se formatea al mostrarse, no al guardarse: así un mensaje ya en
+  // pantalla cambia también el formato de los números cuando se cambia de idioma.
+  function t(key, ...args) {
+    const text = (TEXTOS[lang] && TEXTOS[lang][key]) || TEXTOS.es[key] || key;
+    return text.replace(/\{(\d+)\}/g, (_, n) => {
+      const arg = args[Number(n)];
+      return arg && typeof arg === "object" && "bytes" in arg ? formatBytes(arg.bytes) : String(arg);
+    });
+  }
+
+  function formatBytes(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    const locale = lang === "es" ? "es-AR" : "en-US";
+    const digits = unit === 0 ? 0 : (value < 10 ? 2 : 1);
+    return value.toLocaleString(locale, { maximumFractionDigits: digits }) + " " + units[unit];
+  }
+
+  function formatDate(iso) {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    const locale = lang === "es" ? "es-AR" : "en-US";
+    return date.toLocaleString(locale, { dateStyle: "long", timeStyle: "medium" }) + " (" + iso + ")";
+  }
+
+  function show(id, kind, key, ...args) {
+    lastMessages[id] = key ? { kind, key, args } : null;
+    renderMessage(id);
+  }
+
+  function renderMessage(id) {
+    const el = $(id);
+    const m = lastMessages[id];
+    el.className = "msg" + (m ? " " + m.kind : "");
+    el.textContent = m ? t(m.key, ...m.args) : "";
+  }
+
+  function applyLanguage() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-t]").forEach((el) => {
+      const key = el.getAttribute("data-t");
+      if (key === "bajada") {
+        el.innerHTML = t(key); // texto fijo de esta página, no viene de afuera
+      } else {
+        el.textContent = t(key);
+      }
+    });
+    document.querySelectorAll("[data-t-aria]").forEach((el) => {
+      el.setAttribute("aria-label", t(el.getAttribute("data-t-aria")));
+    });
+    document.querySelectorAll("[data-lang]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-lang") === lang));
+    });
+    if (envelope) {
+      $("d-tamano").textContent = formatBytes(envelope.info.payloadSize);
+      $("d-fecha").textContent = formatDate(envelope.info.sealedAtUtc);
+    }
+    Object.keys(lastMessages).forEach(renderMessage);
+    document.title = t("titulo");
+  }
+
+  function setStep(id, enabled) {
+    $(id).setAttribute("aria-disabled", String(!enabled));
+  }
+
+  function errorMessage(error) {
+    if (error instanceof FzsError) {
+      switch (error.code) {
+        case "version": return ["err-version", error.detail.version];
+        case "algoritmo": return ["err-algoritmo", error.detail.kdf, error.detail.cipher];
+        case "alterado": return ["err-alterado", error.detail.chunk];
+        default: return ["err-" + error.code];
+      }
+    }
+    if (error && error.name === "QuotaExceededError") return ["err-espacio"];
+    if (error && error.name === "NotAllowedError") return ["err-permiso"];
+    if (error && error.name === "AbortError") return ["err-cancelado"];
+    return ["err-interno", error && error.message ? error.message : String(error)];
+  }
+
+  function resetFrom(step) {
+    if (step <= 1) {
+      envelope = null;
+      $("datos").classList.add("hidden");
+      show("msg1");
+    }
+    if (step <= 2) {
+      if (envelope) {
+        envelope.key = null;
+      }
+      $("clave").value = "";
+      show("msg2");
+    }
+    $("btn-guardar").disabled = true;
+    setStep("paso3", false);
+    $("avance").classList.add("hidden");
+    show("msg3");
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Requisitos del navegador
+  // ---------------------------------------------------------------------------
+
+  function checkBrowser() {
+    if (!window.isSecureContext || !window.crypto || !window.crypto.subtle) {
+      return "err-sin-cripto";
+    }
+    if (typeof window.showSaveFilePicker !== "function") {
+      return "err-sin-guardado";
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Paso 1: elegir el sobre
+  // ---------------------------------------------------------------------------
+
+  $("archivo").addEventListener("change", async (event) => {
+    resetFrom(1);
+    const file = event.target.files && event.target.files[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    $("d-archivo").textContent = file.name;
+    try {
+      const info = await FzsNucleo.readHeader(file);
+      envelope = { blob: file, info, key: null, name: file.name };
+      $("d-id").textContent = info.packageId;
+      $("d-fecha").textContent = formatDate(info.sealedAtUtc);
+      $("d-tamano").textContent = formatBytes(info.payloadSize);
+      $("datos").classList.remove("hidden");
+      show("msg1", "ok", "sobre-ok");
+      setStep("paso2", true);
+      $("clave").disabled = false;
+      $("btn-comprobar").disabled = false;
+      $("clave").focus();
+    } catch (error) {
+      $("datos").classList.add("hidden");
+      setStep("paso2", false);
+      $("clave").disabled = true;
+      $("btn-comprobar").disabled = true;
+      if (error instanceof FzsError) {
+        show("msg1", "bad", ...errorMessage(error));
+      } else {
+        show("msg1", "bad", "err-lectura", error && error.message ? error.message : String(error));
+      }
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  //  Paso 2: comprobar la contraseña (descifra solo el primer bloque)
+  // ---------------------------------------------------------------------------
+
+  $("form-clave").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!envelope) {
+      return;
+    }
+    const password = $("clave").value;
+    if (!password) {
+      show("msg2", "warn", "clave-vacia");
+      return;
+    }
+
+    resetFrom(3);
+    $("btn-comprobar").disabled = true;
+    show("msg2", "info", "comprobando");
+    try {
+      const key = await FzsNucleo.deriveKey(password, envelope.info);
+      await FzsNucleo.checkKey(envelope.blob, envelope.info, key);
+      envelope.key = key;
+      // Con la clave derivada ya no hace falta el texto: se borra del campo.
+      $("clave").value = "";
+      show("msg2", "ok", "clave-ok");
+      setStep("paso3", true);
+      $("btn-guardar").disabled = false;
+      $("btn-guardar").focus();
+    } catch (error) {
+      show("msg2", "bad", ...errorMessage(error));
+      $("clave").select();
+    } finally {
+      $("btn-comprobar").disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  //  Paso 3: elegir destino y abrir
+  // ---------------------------------------------------------------------------
+
+  $("btn-guardar").addEventListener("click", async () => {
+    if (!envelope || !envelope.key || working) {
+      return;
+    }
+    const unsupported = checkBrowser();
+    if (unsupported) {
+      show("msg3", "bad", unsupported);
+      return;
+    }
+
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName: envelope.name.replace(/\.fzs$/i, "") + ".zip",
+        types: [{ description: "ZIP", accept: { "application/zip": [".zip"] } }]
+      });
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        show("msg3", "info", "salida-cancelada");
+      } else {
+        show("msg3", "bad", ...errorMessage(error));
+      }
+      return;
+    }
+
+    working = new AbortController();
+    $("btn-guardar").disabled = true;
+    $("btn-comprobar").disabled = true;
+    $("archivo").disabled = true;
+    $("btn-cancelar").classList.remove("hidden");
+    $("avance").classList.remove("hidden");
+    $("barra").value = 0;
+    $("avance-texto").textContent = "";
+    show("msg3", "info", "abriendo");
+
+    // El navegador escribe en un archivo temporal propio y solo lo pone en su lugar al
+    // cerrar. close() se llama recién después de validar el último bloque; ante cualquier
+    // error, abort() descarta todo lo escrito.
+    let writable = null;
+    try {
+      writable = await handle.createWritable();
+      const written = await FzsNucleo.open({
+        blob: envelope.blob,
+        info: envelope.info,
+        key: envelope.key,
+        signal: working.signal,
+        write: async (bytes) => {
+          try {
+            await writable.write(bytes);
+          } catch (error) {
+            if (error && (error.name === "QuotaExceededError" || error.name === "NotAllowedError")) {
+              throw error;
+            }
+            const wrapped = new Error(error && error.message ? error.message : String(error));
+            wrapped.name = "WriteError";
+            throw wrapped;
+          }
+        },
+        onProgress: (p) => {
+          $("barra").value = p.totalBytes > 0 ? (p.bytes / p.totalBytes) * 100 : 100;
+          $("avance-texto").textContent =
+            t("avance", formatBytes(p.bytes), formatBytes(p.totalBytes), p.chunk, p.totalChunks);
+        }
+      });
+      await writable.close();
+      writable = null;
+      $("barra").value = 100;
+      show("msg3", "ok", "listo", handle.name, { bytes: written });
+    } catch (error) {
+      if (writable) {
+        try {
+          await writable.abort();
+        } catch {
+          // Si abortar falla, el navegador igual descarta el temporal al cerrar la página.
+        }
+      }
+      const [key, ...args] = error && error.name === "WriteError"
+        ? ["err-escritura", error.message]
+        : errorMessage(error);
+      show("msg3", "bad", key, ...args);
+      $("avance-texto").textContent = t("nota-vacio");
+    } finally {
+      working = null;
+      // El resultado queda al pie de la página: se lo trae a la vista, sea éxito o error.
+      $("msg3").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      $("btn-cancelar").classList.add("hidden");
+      $("btn-guardar").disabled = !(envelope && envelope.key);
+      $("btn-comprobar").disabled = false;
+      $("archivo").disabled = false;
+    }
+  });
+
+  $("btn-cancelar").addEventListener("click", () => {
+    if (working) {
+      working.abort();
+    }
+  });
+
+  window.addEventListener("beforeunload", (event) => {
+    if (working) {
+      event.preventDefault();
+      event.returnValue = t("salir-trabajando");
+    }
+  });
+
+  document.querySelectorAll("[data-lang]").forEach((button) => {
+    button.addEventListener("click", () => {
+      lang = button.getAttribute("data-lang");
+      applyLanguage();
+    });
+  });
+
+  applyLanguage();
+  const unsupported = checkBrowser();
+  if (unsupported) {
+    const banner = $("incompatible");
+    banner.textContent = t(unsupported);
+    banner.classList.remove("hidden");
+  }
+})();
+</script>
+</body>
+</html>

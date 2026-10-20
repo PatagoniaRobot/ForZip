@@ -32,10 +32,28 @@ public interface IReportService
     string GenerateReport(ReportData data, string language);
 
     /// <summary>
+    /// El mismo informe como página HTML imprimible, para que lo abra con doble clic quien no lee texto de columnas
+    /// fijas. Es una presentación del manifiesto: no se firma ni se verifica. No lleva scripts ni recursos externos.
+    /// </summary>
+    string GenerateReportHtml(ReportData data, string language);
+
+    /// <summary>
+    /// El informe en el formato que pide la extensión de <paramref name="path"/>: HTML para <c>.html</c> o
+    /// <c>.htm</c>, texto para cualquier otra.
+    /// </summary>
+    string GenerateReportFor(string path, ReportData data, string language);
+
+    /// <summary>
     /// Genera el manifiesto forense en formato JSON (legible por máquina), fuente de
     /// verdad para la verificación automática de la evidencia.
     /// </summary>
     string GenerateManifestJson(ReportData data);
+
+    /// <summary>
+    /// Los datos del informe a partir de un manifiesto, para armarlo a pedido después de empaquetar. El entorno es el
+    /// que registró el manifiesto (null si es anterior al esquema 1.4), nunca el de la PC donde se arma.
+    /// </summary>
+    ReportData FromManifest(ForensicManifest manifest, string manifestFileName);
 
     Task SaveReportAsync(string content, string outputPath);
 
@@ -44,4 +62,18 @@ public interface IReportService
     /// SHA-256 almacenado en el archivo externo <c>&lt;informe&gt;.sha256</c>.
     /// </summary>
     (bool isValid, string details) VerifyReport(string reportPath);
+
+    /// <summary>
+    /// Como <see cref="VerifyReport"/>, pero distingue un informe alterado de uno que no se puede verificar (sin
+    /// <c>.sha256</c>, o ilegible): lo segundo no es una alteración y no se presenta como tal.
+    /// </summary>
+    (ReportIntegrity status, string details) CheckReport(string reportPath);
+}
+
+/// <summary>Resultado de verificar un informe contra su <c>.sha256</c>.</summary>
+public enum ReportIntegrity
+{
+    Valid,
+    Altered,
+    Unverifiable
 }

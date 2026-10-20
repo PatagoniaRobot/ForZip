@@ -45,6 +45,19 @@ public interface IHashService
         CancellationToken ct);
 
     /// <summary>
+    /// Igual que la anterior, pero con el tamaño total conocido de antemano para poder
+    /// reportar progreso fraccional. Es el caso del ZIP dividido en volúmenes: el archivo
+    /// lógico no existe en disco, pero la suma de los volúmenes sí se conoce.
+    /// </summary>
+    /// <param name="totalSize">Tamaño total en bytes, o un valor no positivo si se desconoce.</param>
+    Task<Dictionary<HashAlgorithmType, string>> ComputeHashesAsync(
+        Stream stream,
+        HashSet<HashAlgorithmType> algorithms,
+        long totalSize,
+        IProgress<double>? progress,
+        CancellationToken ct);
+
+    /// <summary>
     /// Calcula hashes de varios archivos en paralelo (con concurrencia acotada),
     /// preservando el orden de entrada en la lista de resultados.
     /// </summary>

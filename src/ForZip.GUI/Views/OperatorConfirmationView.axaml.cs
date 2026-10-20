@@ -49,6 +49,15 @@ public partial class OperatorConfirmationView : Window
     {
         if (DataContext is OperatorConfirmationViewModel vm)
         {
+            // Con un certificado que no abre, el diálogo no se cierra: se corrige acá y no al final del trabajo.
+            var prefix = this.TryFindResource("operator_cert_unusable", out var text) && text is string s
+                ? s
+                : "El certificado no sirve para firmar:";
+            if (!vm.TryValidateCertificate(prefix))
+            {
+                return;
+            }
+
             Close(vm.GetResult());
         }
     }

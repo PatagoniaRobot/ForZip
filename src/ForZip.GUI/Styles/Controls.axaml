@@ -1,0 +1,88 @@
+<!--
+  Piezas del diseño nuevo que no son un estilo sobre un control de Fluent sino un control con
+  otra forma: la tipografía incrustada, el selector segmentado (ZIP | 7z, Simple | Avanzado)
+  y las tarjetas elegibles (perfil Estándar / Reservado). Son RadioButton por dentro, así que
+  el teclado, el grupo y el enlace a datos funcionan igual que antes.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- IBM Plex (SIL OFL 1.1, ver THIRD-PARTY-NOTICES.txt). La familia se busca por su nombre
+       tipográfico; Medium y SemiBold son pesos de la misma familia. -->
+  <FontFamily x:Key="PlexSans">avares://ForZip/Assets/Fonts#IBM Plex Sans</FontFamily>
+  <FontFamily x:Key="PlexMono">avares://ForZip/Assets/Fonts#IBM Plex Mono</FontFamily>
+
+  <!-- Selector segmentado: una pista gris y la opción elegida como una pastilla. -->
+  <ControlTheme x:Key="SegmentRadio" TargetType="RadioButton">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Padding" Value="18,0"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Pill"
+                Background="{TemplateBinding Background}"
+                CornerRadius="7"
+                Padding="{TemplateBinding Padding}"
+                MinHeight="{TemplateBinding MinHeight}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="^:checked">
+      <Setter Property="Background" Value="{DynamicResource SegmentOnBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.45"/>
+    </Style>
+  </ControlTheme>
+
+  <!-- Tarjeta elegible: borde de 2 px; elegida, borde y fondo del acento. -->
+  <ControlTheme x:Key="CardRadio" TargetType="RadioButton">
+    <Setter Property="Background" Value="{DynamicResource BgCardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="Padding" Value="14"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Card"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="2"
+                CornerRadius="11"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Foreground="{TemplateBinding Foreground}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}"/>
+    </Style>
+    <Style Selector="^:checked">
+      <Setter Property="Background" Value="{DynamicResource AccentCardBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

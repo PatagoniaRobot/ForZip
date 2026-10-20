@@ -35,8 +35,16 @@ public class LogService : ILogService
     // Rotación: al superar este tamaño, el .log actual se archiva con marca temporal
     private const long MaxLogFileBytes = 5 * 1024 * 1024;
 
-    private readonly string _logFilePath;
+    /// <summary>Carpeta de la bitácora; null si no se pudo crear (se sigue sin bitácora en disco).</summary>
+    private readonly string? _logDirectory;
     private readonly object _fileLock = new();
+
+    /// <summary>
+    /// Un archivo por día, según la fecha de cada línea: antes se fijaba al arrancar y, pasada la medianoche, se
+    /// seguía escribiendo en el del día anterior.
+    /// </summary>
+    private string LogFilePathFor(DateTime timestamp) =>
+        Path.Combine(_logDirectory!, $"ForZip_{timestamp:yyyyMMdd}.log");
 
     /// <summary>
     /// Despachador opcional al hilo de UI. La GUI lo asigna con
@@ -49,19 +57,40 @@ public class LogService : ILogService
     {
         Entries = new ObservableCollection<LogEntry>();
 
-        var baseDir = AppContext.BaseDirectory;
-        var logDir = Path.Combine(baseDir, LogDirectory);
-        Directory.CreateDirectory(logDir);
-
-        var fileName = $"ForZip_{DateTime.Now:yyyyMMdd}.log";
-        _logFilePath = Path.Combine(logDir, fileName);
+        // Si la carpeta no se puede crear, ForZip arranca igual: la bitácora queda en pantalla. Antes la excepción
+        // cerraba la aplicación al iniciar.
+        try
+        {
+            var logDir = Path.Combine(AppDataLocation.Directory, LogDirectory);
+            Directory.CreateDirectory(logDir);
+            _logDirectory = logDir;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            _logDirectory = null;
+        }
     }
 
     public ObservableCollection<LogEntry> Entries { get; }
 
-    public void Log(LogLevel level, string message)
+    /// <inheritdoc />
+    public bool Redacted { get; set; }
+
+    /// <inheritdoc />
+    public string RedactedMarker { get; set; } = "[omitido: perfil Reservado]";
+
+    public void Log(LogLevel level, string message) => Log(level, message, null);
+
+    /// <inheritdoc />
+    public void Log(LogLevel level, string message, string? evidenceDetail)
     {
-        var entry = new LogEntry(DateTime.Now, level, message);
+        // En modo de redacción el detalle no se acorta ni se enmascara: no se escribe. Una
+        // ruta parcial en la bitácora de una causa reservada sigue siendo una ruta.
+        var text = Redacted || string.IsNullOrEmpty(evidenceDetail)
+            ? message
+            : $"{message} {evidenceDetail}";
+
+        var entry = new LogEntry(DateTime.Now, level, text);
 
         // Mutar la ObservableCollection en el hilo de UI cuando hay despachador
         if (UiDispatcher != null)
@@ -94,11 +123,17 @@ public class LogService : ILogService
         {
             var line = $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] [{entry.Level.ToString().ToUpper()}] {entry.Message}{Environment.NewLine}";
 
+            if (_logDirectory == null)
+            {
+                return;
+            }
+
             // Una sola escritura serializada evita intercalado entre hilos
             lock (_fileLock)
             {
-                RotateIfNeeded();
-                File.AppendAllText(_logFilePath, line);
+                var path = LogFilePathFor(entry.Timestamp);
+                RotateIfNeeded(path);
+                File.AppendAllText(path, line);
             }
         }
         catch
@@ -107,18 +142,18 @@ public class LogService : ILogService
         }
     }
 
-    private void RotateIfNeeded()
+    private static void RotateIfNeeded(string logFilePath)
     {
-        var info = new FileInfo(_logFilePath);
+        var info = new FileInfo(logFilePath);
         if (!info.Exists || info.Length < MaxLogFileBytes)
         {
             return;
         }
 
-        var archived = $"{_logFilePath}.{DateTime.Now:HHmmss}.bak";
+        var archived = $"{logFilePath}.{DateTime.Now:HHmmss}.bak";
         try
         {
-            File.Move(_logFilePath, archived);
+            File.Move(logFilePath, archived);
         }
         catch (IOException)
         {

@@ -48,6 +48,17 @@ public partial class UpdateConfirmView : Window
         CancelButton.Content = cancel;
     }
 
+    /// <summary>
+    /// Deja la opción segura como la de por defecto: Enter y Escape cancelan, y el foco arranca
+    /// en Cancelar. Para las confirmaciones donde aceptar tiene consecuencias.
+    /// </summary>
+    public void PreferCancel()
+    {
+        CancelButton.IsDefault = true;
+        CancelButton.IsCancel = true;
+        Opened += (_, _) => CancelButton.Focus();
+    }
+
     private void OnAcceptClick(object? sender, RoutedEventArgs e) => Close(true);
 
     private void OnCancelClick(object? sender, RoutedEventArgs e) => Close(false);

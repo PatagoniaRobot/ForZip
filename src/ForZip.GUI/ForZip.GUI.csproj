@@ -4,15 +4,15 @@
     <!-- El ejecutable distribuible se llama ForZip.exe (coincide con el README), aunque el
          proyecto/namespace sea ForZip.GUI. -->
     <AssemblyName>ForZip</AssemblyName>
-    <!-- net8.0-windows: provee Microsoft.Win32.Registry integrado (sin paquetes externos) para
+    <!-- net10.0-windows: provee Microsoft.Win32.Registry integrado (sin paquetes externos) para
          la integración con el menú contextual. La GUI ya estaba fijada a win-x64/WinExe. -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\ForZip.ico</ApplicationIcon>
     <!-- Mantener sincronizada con AppInfo.Version (fuente de verdad en código) -->
-    <Version>1.4.0</Version>
+    <Version>2.0.0</Version>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
@@ -23,6 +23,9 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Lo trae Avalonia (solo para Linux; en Windows no se carga). Se fija la versión corregida de la
+         misma serie por GHSA-xrw6-gwf8-vvr9, que el SDK de .NET 10 informa al auditar dependencias. -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +40,9 @@
     <None Update="Help_ForZip.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- La ayuda también va dentro del .exe: la actualización reemplaza solo el ejecutable, y la copia de al lado
+         quedaba en la versión anterior. -->
+    <EmbeddedResource Include="Help_ForZip.html" LogicalName="ForZip.Help_ForZip.html" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -45,4 +51,11 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lo que exigen las licencias al distribuir: la de ForZip (Apache 2.0), su NOTICE y los avisos de
+         terceros (MIT, BSD, OFL...). Van sueltos junto al ejecutable, fuera del archivo único. -->
+    <None Include="..\..\LICENSE;..\..\NOTICE;..\..\THIRD-PARTY-NOTICES.txt" Link="%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
 </Project>

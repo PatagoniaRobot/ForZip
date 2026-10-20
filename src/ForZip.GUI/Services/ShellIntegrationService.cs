@@ -84,9 +84,87 @@ public sealed class ShellIntegrationService : IShellIntegrationService
             key.SetValue(entry.ValueName ?? string.Empty, entry.Value, RegistryValueKind.String);
         }
 
+        RegisterSealedExtension();
+
         using var marker = Registry.CurrentUser.CreateSubKey(ShellMenuLayout.MarkerKey);
         marker.SetValue(ShellMenuLayout.MarkerValueName, exe, RegistryValueKind.String);
+
+        NotifyAssociationsChanged();
     }
+
+    /// <summary>
+    /// Asocia <c>.fzs</c> al tipo de archivo de ForZip sin imponerse: se declara siempre en
+    /// OpenWithProgids, pero se toma el valor por defecto de la extensión solo si nadie lo
+    /// reclamó antes. Si el usuario eligió otro programa, Windows respeta esa elección.
+    /// </summary>
+    private static void RegisterSealedExtension()
+    {
+        using var extension = Registry.CurrentUser.CreateSubKey(ShellMenuLayout.SealedExtensionKey);
+        if (string.IsNullOrEmpty(extension.GetValue(string.Empty) as string))
+        {
+            extension.SetValue(string.Empty, ShellMenuLayout.SealedProgId, RegistryValueKind.String);
+        }
+
+        using var openWith = Registry.CurrentUser.CreateSubKey(ShellMenuLayout.SealedOpenWithKey);
+        openWith.SetValue(ShellMenuLayout.SealedProgId, string.Empty, RegistryValueKind.String);
+    }
+
+    /// <summary>
+    /// Retira de <c>.fzs</c> solo lo que puso ForZip. La clave se borra únicamente si queda
+    /// vacía: puede tener datos de otros programas.
+    /// </summary>
+    private static void UnregisterSealedExtension()
+    {
+        using (var openWith = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.SealedOpenWithKey, writable: true))
+        {
+            openWith?.DeleteValue(ShellMenuLayout.SealedProgId, throwOnMissingValue: false);
+        }
+
+        using (var openWith = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.SealedOpenWithKey))
+        {
+            if (openWith != null && openWith.ValueCount == 0 && openWith.SubKeyCount == 0)
+            {
+                openWith.Dispose();
+                Registry.CurrentUser.DeleteSubKey(ShellMenuLayout.SealedOpenWithKey, throwOnMissingSubKey: false);
+            }
+        }
+
+        using (var extension = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.SealedExtensionKey, writable: true))
+        {
+            if (extension == null)
+            {
+                return;
+            }
+
+            if (string.Equals(extension.GetValue(string.Empty) as string, ShellMenuLayout.SealedProgId, StringComparison.Ordinal))
+            {
+                extension.DeleteValue(string.Empty, throwOnMissingValue: false);
+            }
+        }
+
+        using (var extension = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.SealedExtensionKey))
+        {
+            if (extension != null && extension.ValueCount == 0 && extension.SubKeyCount == 0)
+            {
+                extension.Dispose();
+                Registry.CurrentUser.DeleteSubKey(ShellMenuLayout.SealedExtensionKey, throwOnMissingSubKey: false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Avisa al Explorador que cambiaron las asociaciones, para que muestre el ícono nuevo
+    /// del sobre sin reiniciar la sesión.
+    /// </summary>
+    private static void NotifyAssociationsChanged()
+    {
+        const int SHCNE_ASSOCCHANGED = 0x08000000;
+        const uint SHCNF_IDLIST = 0x0000;
+        SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(int eventId, uint flags, IntPtr item1, IntPtr item2);
 
     public void Unregister()
     {
@@ -100,8 +178,14 @@ public sealed class ShellIntegrationService : IShellIntegrationService
             Registry.CurrentUser.DeleteSubKeyTree(root, throwOnMissingSubKey: false);
         }
 
-        using var marker = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.MarkerKey, writable: true);
-        marker?.DeleteValue(ShellMenuLayout.MarkerValueName, throwOnMissingValue: false);
+        UnregisterSealedExtension();
+
+        using (var marker = Registry.CurrentUser.OpenSubKey(ShellMenuLayout.MarkerKey, writable: true))
+        {
+            marker?.DeleteValue(ShellMenuLayout.MarkerValueName, throwOnMissingValue: false);
+        }
+
+        NotifyAssociationsChanged();
     }
 
     public bool WasOfferShown()
@@ -129,9 +213,14 @@ public sealed class ShellIntegrationService : IShellIntegrationService
     private ShellMenuLabels BuildLabels() => new(
         Menu: "ForZip",
         Compress: _localization.Get("shell_compress"),
+        CompressReserved: _localization.Get("shell_compress_reserved"),
         Hash: _localization.Get("shell_hash"),
         Extract: _localization.Get("shell_extract"),
         ExtractHere: _localization.Get("shell_extract_here"),
         ExtractTo: _localization.Get("shell_extract_to"),
-        Verify: _localization.Get("shell_verify"));
+        Verify: _localization.Get("shell_verify"),
+        VerifySealed: _localization.Get("shell_verify_sealed"),
+        OpenSealed: _localization.Get("shell_open_sealed"),
+        SealedFileType: _localization.Get("shell_sealed_file_type"),
+        VerifyVolume: _localization.Get("shell_verify_volume"));
 }

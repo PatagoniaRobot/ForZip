@@ -5,25 +5,15 @@
              x:DataType="vm:AboutViewModel">
 
   <ScrollViewer>
-    <StackPanel Spacing="14" Margin="4" HorizontalAlignment="Center" MaxWidth="600">
+    <StackPanel Spacing="14" Margin="32,28,32,28" HorizontalAlignment="Center" MaxWidth="640">
 
-      <TextBlock Text="ACERCA DE"
-                 FontSize="16" FontWeight="SemiBold"
-                 Foreground="{DynamicResource TextPrimaryBrush}"
-                 HorizontalAlignment="Left"/>
+      <TextBlock Classes="h1" Text="{DynamicResource about}" HorizontalAlignment="Left"/>
 
-      <Border BorderBrush="{DynamicResource BorderBrush}"
-              BorderThickness="1"
-              CornerRadius="8"
-              Width="128" Height="128"
-              Background="{DynamicResource BgCardBrush}"
-              HorizontalAlignment="Center">
-        <TextBlock Text="📦🔍"
-                   FontSize="48"
-                   Foreground="{DynamicResource AccentBrush}"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
-      </Border>
+      <!-- El logo oficial, el mismo del ejecutable y de la barra lateral. -->
+      <Image Source="avares://ForZip/Assets/ForZip_logo_256x256.png"
+             Width="112" Height="112"
+             RenderOptions.BitmapInterpolationMode="HighQuality"
+             HorizontalAlignment="Center"/>
 
       <TextBlock Text="{Binding AppName, StringFormat='{}{0}'}"
                  FontSize="20" FontWeight="Bold"
@@ -77,13 +67,10 @@
                     Command="{Binding CheckUpdatesCommand}"
                     IsEnabled="{Binding !IsCheckingUpdates}"
                     Padding="16,8"/>
-            <Button Content="{Binding ButtonInstallUpdate}"
+            <Button Classes="primary" Content="{Binding ButtonInstallUpdate}"
                     Command="{Binding InstallUpdateCommand}"
                     IsVisible="{Binding CanInstallUpdate}"
-                    IsEnabled="{Binding !IsBusy}"
-                    Background="{DynamicResource AccentBrush}"
-                    Foreground="White"
-                    Padding="16,8"/>
+                    IsEnabled="{Binding !IsBusy}"/>
             <Button Content="{Binding ButtonOpenRelease}"
                     Command="{Binding OpenReleasePageCommand}"
                     IsVisible="{Binding IsUpdateAvailable}"
@@ -150,6 +137,9 @@
                   HorizontalAlignment="Center">
         <Button Content="Guía ForZip"
                 Command="{Binding OpenHelpCommand}"
+                Padding="16,8"/>
+        <Button Content="Licencias"
+                Command="{Binding OpenLicensesCommand}"
                 Padding="16,8"/>
         <Button Content="Sitio web"
                 Command="{Binding OpenWebsiteCommand}"

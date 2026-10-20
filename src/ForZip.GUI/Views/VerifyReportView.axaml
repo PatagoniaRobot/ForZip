@@ -5,78 +5,185 @@
              x:DataType="vm:VerifyReportViewModel"
              DragDrop.AllowDrop="True">
 
-  <ScrollViewer>
-    <StackPanel Spacing="12" Margin="4">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="20" Margin="32,28,32,28" MaxWidth="900">
 
-      <TextBlock Text="VERIFICAR INFORME"
-                 FontSize="16" FontWeight="SemiBold"
-                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+      <StackPanel Spacing="4">
+        <TextBlock Classes="h1" Text="{Binding Heading}"/>
+        <TextBlock Classes="lead" Text="{Binding Subtitle}"/>
+      </StackPanel>
 
-      <Border BorderBrush="{DynamicResource BorderBrush}"
-              BorderThickness="1"
-              CornerRadius="4"
-              Padding="24"
-              MinHeight="100">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-          <TextBlock Text="Arrastrá un informe ForZip (.txt) aquí"
-                     Foreground="{DynamicResource TextSecondaryBrush}"
-                     HorizontalAlignment="Center"/>
-          <Button Content="Seleccionar informe..."
-                  Click="OnBrowseClick"
-                  HorizontalAlignment="Center"
-                  Margin="0,8,0,0"/>
+      <!-- ===== El veredicto, grande: se entiende sin leer el detalle ===== -->
+      <Border Classes="verdict" IsVisible="{Binding HasResult}"
+              Classes.valid="{Binding IsValid}"
+              Classes.invalid="{Binding IsInvalid}"
+              Classes.doubt="{Binding !IsValid}">
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Grid.Column="0" Classes="verdictBadge" Width="68" Height="68" CornerRadius="34"
+                  Margin="0,0,22,0" VerticalAlignment="Center">
+            <Panel>
+              <Viewbox Width="36" Height="36" IsVisible="{Binding IsValid}">
+                <Path Classes="icon onAccent" StrokeThickness="2.4" Data="{StaticResource IconCheck}"/>
+              </Viewbox>
+              <Viewbox Width="36" Height="36" IsVisible="{Binding IsInvalid}">
+                <Path Classes="icon onAccent" StrokeThickness="2.6" Data="{StaticResource IconCross}"/>
+              </Viewbox>
+              <Viewbox Width="36" Height="36" IsVisible="{Binding IsBadFormat}">
+                <Path Classes="icon verdictMark" StrokeThickness="2.6" Data="{StaticResource IconExclamation}"/>
+              </Viewbox>
+              <Viewbox Width="36" Height="36" IsVisible="{Binding IsInconclusive}">
+                <Path Classes="icon verdictMark" StrokeThickness="2.6" Data="{StaticResource IconExclamation}"/>
+              </Viewbox>
+            </Panel>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+            <TextBlock Classes="verdictTitle" Text="{Binding LabelBadgeValid}" IsVisible="{Binding IsValid}"/>
+            <TextBlock Classes="verdictTitle" Text="{Binding LabelBadgeInvalid}" IsVisible="{Binding IsInvalid}"/>
+            <TextBlock Classes="verdictTitle" Text="{Binding LabelBadgeBadFormat}" IsVisible="{Binding IsBadFormat}"/>
+            <TextBlock Classes="verdictTitle" Text="{Binding LabelBadgeInconclusive}" IsVisible="{Binding IsInconclusive}"/>
+            <TextBlock Text="{Binding VerdictLead}" FontSize="15" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- ===== Detalle: archivo por archivo, firma, sello de tiempo ===== -->
+      <Border Classes="card" IsVisible="{Binding HasResult}">
+        <SelectableTextBlock Text="{Binding DetailsText}"
+                             FontFamily="{StaticResource PlexMono}"
+                             FontSize="13"
+                             LineHeight="20"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             TextWrapping="Wrap"/>
+      </Border>
+
+      <!-- ===== Informe a pedido: el del paquete verificado, con este veredicto al final ===== -->
+      <StackPanel Spacing="6" IsVisible="{Binding CanSaveReport}">
+        <Button Click="OnSaveReportClick">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Viewbox Width="18" Height="18"><Path Classes="icon" Data="{StaticResource IconReport}"/></Viewbox>
+            <TextBlock Text="{Binding LabelSaveReport}" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+        <TextBlock Classes="hint" Text="{Binding LabelSaveReportHint}" TextWrapping="Wrap"/>
+        <TextBlock Classes="hint" Text="{Binding ReportSavedNote}" TextWrapping="Wrap"
+                   IsVisible="{Binding ReportSavedNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        <Button Command="{Binding OpenSavedReportFolderCommand}" IsVisible="{Binding HasSavedReport}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Viewbox Width="16" Height="16"><Path Classes="icon" Data="{StaticResource IconFolder}"/></Viewbox>
+            <TextBlock Text="{Binding LabelOpenFolder}" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+
+      <!-- ===== Qué verificar ===== -->
+      <Border Classes="card">
+        <StackPanel Spacing="18">
+          <Panel>
+            <Rectangle Stroke="{DynamicResource DashedBorderBrush}" StrokeThickness="1.5"
+                       StrokeDashArray="4,3" RadiusX="12" RadiusY="12"/>
+            <Border Background="{DynamicResource BgSubtleBrush}" CornerRadius="12" Margin="1.5" Padding="16,18">
+              <StackPanel HorizontalAlignment="Center" Spacing="10">
+                <Viewbox Width="28" Height="28" HorizontalAlignment="Center"><Path Classes="icon" Data="{StaticResource IconDrop}"/></Viewbox>
+                <TextBlock Text="{Binding LabelDropZone}" FontSize="14"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                <Button Content="{Binding ButtonBrowse}" Click="OnBrowseClick" HorizontalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+          </Panel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{Binding LabelInputFile}"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Classes="mono" Text="{Binding ReportFilePath}"/>
+              <Button Grid.Column="1" Classes="icon" Click="OnBrowseClick" Margin="8,0,0,0"
+                      ToolTip.Tip="{Binding ButtonBrowse}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconFile}"/></Viewbox>
+              </Button>
+            </Grid>
+          </StackPanel>
+
+          <!-- Sobre sellado: la contraseña es opcional y decide el nivel de verificación.
+               Sin ella se responde lo que va al expediente sin abrir el contenido. En un paquete
+               cifrado (manifiesto) hace falta para releer el contenido. -->
+          <StackPanel Spacing="6" IsVisible="{Binding IsPasswordInputVisible}">
+            <TextBlock Classes="label" Text="{Binding LabelSealedPassword}"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Classes="mono" FontSize="15"
+                       Text="{Binding SealedPassword}"
+                       PasswordChar="{Binding PasswordCharDisplay}"
+                       KeyDown="OnPasswordKeyDown"/>
+              <ToggleButton Grid.Column="1" Classes="icon" Margin="8,0,0,0"
+                            IsChecked="{Binding IsPasswordVisible}"
+                            ToolTip.Tip="{Binding TooltipTogglePassword}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconEye}"/></Viewbox>
+              </ToggleButton>
+            </Grid>
+            <TextBlock Classes="hint" Text="{Binding LabelSealedPasswordHint}"/>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <!-- Sin esto quedaba a la vista el veredicto del caso anterior -->
+            <Button Content="{Binding LabelClear}" Command="{Binding ClearCommand}"
+                    IsEnabled="{Binding !VerifyCommand.IsRunning}" Padding="20,10"/>
+            <Button Classes="primary" Command="{Binding VerifyCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" StrokeThickness="1.9" Data="{StaticResource IconVerify}"/></Viewbox>
+                <TextBlock Text="{Binding LabelVerifyButton}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
         </StackPanel>
       </Border>
 
-      <DockPanel>
-        <Button DockPanel.Dock="Right"
-                Content="..."
-                Click="OnBrowseClick"
-                Width="40"
-                Margin="6,0,0,0"/>
-        <TextBlock DockPanel.Dock="Top"
-                   Text="Archivo de informe:"
-                   Foreground="{DynamicResource TextSecondaryBrush}"
-                   Margin="0,0,0,4"/>
-        <TextBox Text="{Binding ReportFilePath}"/>
-      </DockPanel>
-
-      <Button Content="Verificar"
-              Command="{Binding VerifyCommand}"
-              Background="{DynamicResource AccentBrush}"
-              Foreground="White"
-              Padding="20,8"
-              HorizontalAlignment="Center"/>
-
-      <Border BorderBrush="{DynamicResource BorderBrush}"
-              BorderThickness="1"
-              CornerRadius="4"
-              Padding="20"
-              IsVisible="{Binding HasResult}"
-              Background="{DynamicResource BgCardBrush}">
-        <StackPanel Spacing="8" HorizontalAlignment="Center">
-          <TextBlock Text="✅  INFORME VERIFICADO"
-                     FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource AccentBrush}"
-                     HorizontalAlignment="Center"
-                     IsVisible="{Binding IsValid}"/>
-          <TextBlock Text="❌  INFORME NO VERIFICADO"
-                     FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource ErrorBrush}"
-                     HorizontalAlignment="Center"
-                     IsVisible="{Binding IsInvalid}"/>
-          <TextBlock Text="⚠  FORMATO INVÁLIDO"
-                     FontSize="20" FontWeight="Bold"
-                     Foreground="{DynamicResource WarningBrush}"
-                     HorizontalAlignment="Center"
-                     IsVisible="{Binding IsBadFormat}"/>
-          <TextBlock Text="{Binding DetailsText}"
-                     Foreground="{DynamicResource TextPrimaryBrush}"
-                     HorizontalAlignment="Center"
-                     TextWrapping="Wrap"/>
-        </StackPanel>
-      </Border>
 
     </StackPanel>
   </ScrollViewer>
+
+  <UserControl.Styles>
+    <Style Selector="Border.verdict">
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="Padding" Value="26"/>
+    </Style>
+    <Style Selector="Border.verdict.doubt">
+      <Setter Property="Background" Value="{DynamicResource WarningSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.doubt Border.verdictBadge">
+      <Setter Property="Background" Value="{DynamicResource WarningBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.doubt TextBlock.verdictTitle">
+      <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict Path.verdictMark">
+      <Setter Property="Stroke" Value="{DynamicResource OnWarningBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.valid">
+      <Setter Property="Background" Value="{DynamicResource SuccessSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.valid Border.verdictBadge">
+      <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.valid TextBlock.verdictTitle">
+      <Setter Property="Foreground" Value="{DynamicResource SuccessTextBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.invalid">
+      <Setter Property="Background" Value="{DynamicResource ErrorSoftBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.invalid Border.verdictBadge">
+      <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+    </Style>
+    <Style Selector="Border.verdict.invalid TextBlock.verdictTitle">
+      <Setter Property="Foreground" Value="{DynamicResource ErrorTextBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.verdictTitle">
+      <Setter Property="FontSize" Value="26"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+  </UserControl.Styles>
 </UserControl>

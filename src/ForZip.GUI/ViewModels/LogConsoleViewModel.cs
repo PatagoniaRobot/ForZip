@@ -36,18 +36,35 @@ public partial class LogConsoleViewModel : ObservableObject
     private readonly ILogService _logService;
     private readonly ILocalizationService _localization;
 
+    /// <summary>
+    /// La bitácora arranca plegada para dejarle el alto a la tarea, y se abre sola ante una advertencia o un error:
+    /// lo que el operador tiene que ver no puede quedar escondido detrás de un botón.
+    /// </summary>
     [ObservableProperty]
-    private bool _isExpanded = true;
+    private bool _isExpanded;
 
     public LogConsoleViewModel(ILogService logService, ILocalizationService localization)
     {
         _logService = logService;
         _localization = localization;
+        _logService.Entries.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems?.OfType<LogEntry>().Any(entry => entry.IsWarning || entry.IsError) == true)
+            {
+                IsExpanded = true;
+            }
+        };
         _localization.LanguageChanged += () =>
         {
             OnPropertyChanged(nameof(Title));
             OnPropertyChanged(nameof(TooltipExport));
             OnPropertyChanged(nameof(TooltipClear));
+            OnPropertyChanged(nameof(TooltipPopOut));
+            OnPropertyChanged(nameof(WindowTitle));
+            OnPropertyChanged(nameof(WindowHint));
+            OnPropertyChanged(nameof(ButtonCopyAll));
+            OnPropertyChanged(nameof(MenuCopySelected));
+            OnPropertyChanged(nameof(MenuCopyAll));
         };
     }
 
@@ -55,6 +72,27 @@ public partial class LogConsoleViewModel : ObservableObject
     public string TooltipExport => _localization.Get("log_export_tooltip");
     public string TooltipClear => _localization.Get("log_clear_tooltip");
     public string ExportTitle => _localization.Get("log_export_title");
+    public string TooltipPopOut => _localization.Get("log_popout_tooltip");
+    public string WindowTitle => _localization.Get("log_window_title");
+    public string WindowHint => _localization.Get("log_window_hint");
+    public string ButtonCopyAll => _localization.Get("log_copy_all");
+    public string MenuCopySelected => _localization.Get("log_copy_selected");
+    public string MenuCopyAll => _localization.Get("log_copy_all");
+
+    /// <summary>Una línea de la bitácora tal como se exporta y se copia.</summary>
+    public static string FormatLine(LogEntry entry) =>
+        $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] {entry.Level}: {entry.Message}";
+
+    public static string FormatAll(IEnumerable<LogEntry> entries)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var entry in entries)
+        {
+            sb.Append(FormatLine(entry)).Append(Environment.NewLine);
+        }
+
+        return sb.ToString();
+    }
 
     public ObservableCollection<LogEntry> Entries => _logService.Entries;
 

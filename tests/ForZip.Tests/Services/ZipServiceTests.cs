@@ -157,6 +157,91 @@ public class ZipServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Compress_FileGoneSinceSelection_IsDocumentedAsOmitted()
+    {
+        // Lo que pasó con la GUI y Defender: el operador selecciona la carpeta, el antivirus
+        // pone un adjunto en cuarentena, y al empaquetar ese archivo ya no está. El paquete
+        // tiene que salir igual, pero declarando la ausencia, no como si estuviera completo.
+        var srcDir = Path.Combine(_workDir, "reporte");
+        Directory.CreateDirectory(Path.Combine(srcDir, "files"));
+        var pagina = Path.Combine(srcDir, "pagina.html");
+        var adjunto = Path.Combine(srcDir, "files", "adjunto.txt");
+        await File.WriteAllTextAsync(pagina, "<html></html>");
+        await File.WriteAllTextAsync(adjunto, "adjunto");
+
+        var seenAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var snapshot = Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories)
+            .Select(f => new FileInfo(f))
+            .Select(fi => new SelectedSourceFile(fi.FullName, fi.Length, fi.LastWriteTimeUtc, seenAt))
+            .ToList();
+        File.Delete(adjunto);
+
+        var result = await _service.CompressAsync(new ZipOptions
+        {
+            SourcePaths = new List<string> { srcDir },
+            OutputPath = Path.Combine(_workDir, "reporte.zip"),
+            HashAlgorithms = new HashSet<HashAlgorithmType> { HashAlgorithmType.SHA256 },
+            SelectionSnapshot = snapshot
+        }, null, CancellationToken.None);
+
+        Assert.Single(result.FileHashes);
+        var omitted = Assert.Single(result.OmittedFiles);
+        Assert.Equal(OmissionReason.MissingAtPackaging, omitted.Reason);
+        Assert.Equal("reporte/files/adjunto.txt", omitted.EntryName);
+        Assert.Equal(Path.GetFullPath(adjunto), omitted.SourcePath);
+        Assert.Equal(7, omitted.Size);
+        Assert.Equal(seenAt, omitted.SeenAtUtc);
+        Assert.Null(omitted.WindowsErrorCode);
+    }
+
+    [Fact]
+    public async Task Compress_SelectionUnchanged_HasNoOmissions()
+    {
+        var srcDir = Path.Combine(_workDir, "intacta");
+        Directory.CreateDirectory(srcDir);
+        await File.WriteAllTextAsync(Path.Combine(srcDir, "a.txt"), "a");
+        var snapshot = Directory.EnumerateFiles(srcDir)
+            .Select(f => new FileInfo(f))
+            .Select(fi => new SelectedSourceFile(fi.FullName, fi.Length, fi.LastWriteTimeUtc, DateTimeOffset.UtcNow))
+            .ToList();
+
+        var result = await _service.CompressAsync(new ZipOptions
+        {
+            SourcePaths = new List<string> { srcDir },
+            OutputPath = Path.Combine(_workDir, "intacta.zip"),
+            SelectionSnapshot = snapshot
+        }, null, CancellationToken.None);
+
+        Assert.Empty(result.OmittedFiles);
+    }
+
+    [Fact]
+    public async Task Compress_SelectedSingleFileGone_IsOmittedNotFatal()
+    {
+        // Un archivo suelto seleccionado que desaparece no tumba el paquete del resto.
+        var queda = Path.Combine(_workDir, "queda.txt");
+        var seVa = Path.Combine(_workDir, "se_va.txt");
+        await File.WriteAllTextAsync(queda, "queda");
+        await File.WriteAllTextAsync(seVa, "se va");
+        var snapshot = new[] { queda, seVa }
+            .Select(f => new FileInfo(f))
+            .Select(fi => new SelectedSourceFile(fi.FullName, fi.Length, fi.LastWriteTimeUtc, DateTimeOffset.UtcNow))
+            .ToList();
+        File.Delete(seVa);
+
+        var result = await _service.CompressAsync(new ZipOptions
+        {
+            SourcePaths = new List<string> { queda, seVa },
+            OutputPath = Path.Combine(_workDir, "sueltos.zip"),
+            SelectionSnapshot = snapshot
+        }, null, CancellationToken.None);
+
+        var omitted = Assert.Single(result.OmittedFiles);
+        Assert.Equal("se_va.txt", omitted.EntryName);
+        Assert.Equal(OmissionReason.MissingAtPackaging, omitted.Reason);
+    }
+
+    [Fact]
     public async Task Compress_FolderWithSubfolders_PreservesStructure()
     {
         var srcDir = Path.Combine(_workDir, "myfolder");

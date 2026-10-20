@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ForZip.GUI.ViewModels"
+        x:Class="ForZip.GUI.Views.LogWindow"
+        x:DataType="vm:LogConsoleViewModel"
+        Title="{Binding WindowTitle}"
+        Icon="avares://ForZip/Assets/ForZip.ico"
+        Width="900" Height="520"
+        MinWidth="420" MinHeight="240"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource LogBgBrush}">
+
+  <!-- La bitácora como texto: se puede seleccionar cualquier parte (una palabra, una ruta, varias
+       líneas) y copiarla con Ctrl+C o con el menú del clic derecho. Se actualiza sola. -->
+  <Grid RowDefinitions="Auto,*">
+    <Border Grid.Row="0"
+            Background="{DynamicResource LogHeaderBrush}"
+            BorderBrush="{DynamicResource DividerBrush}"
+            BorderThickness="0,0,0,1"
+            Padding="16,8">
+      <DockPanel>
+        <Button DockPanel.Dock="Right"
+                Content="{Binding ButtonCopyAll}"
+                Click="OnCopyAllClick"/>
+        <TextBlock Text="{Binding WindowHint}"
+                   Classes="hint"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,0"/>
+      </DockPanel>
+    </Border>
+
+    <TextBox Grid.Row="1"
+             x:Name="LogText"
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             TextWrapping="Wrap"
+             FontFamily="{StaticResource PlexMono}"
+             FontSize="12"
+             Foreground="{DynamicResource LogTextBrush}"
+             Background="{DynamicResource LogBgBrush}"
+             BorderThickness="0"
+             CornerRadius="0"
+             Padding="16,10"
+             VerticalContentAlignment="Top"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+  </Grid>
+</Window>

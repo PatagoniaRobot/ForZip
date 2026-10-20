@@ -1,19 +1,22 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <!-- Tema oscuro: paleta forense según 04_Mockups_UI.md -->
-  <Color x:Key="BgPrimaryColor">#1a1a2e</Color>
-  <Color x:Key="BgSecondaryColor">#0f172a</Color>
-  <Color x:Key="BgCardColor">#1e293b</Color>
-  <Color x:Key="BorderColor">#334155</Color>
-  <Color x:Key="TextPrimaryColor">#e2e8f0</Color>
-  <Color x:Key="TextSecondaryColor">#94a3b8</Color>
-  <Color x:Key="AccentColor">#10B981</Color>
-  <Color x:Key="AccentHoverColor">#059669</Color>
-  <Color x:Key="ErrorColor">#ef4444</Color>
-  <Color x:Key="WarningColor">#f59e0b</Color>
-  <Color x:Key="VioletColor">#818cf8</Color>
-  <Color x:Key="ProgressBgColor">#334155</Color>
-  <Color x:Key="ProgressFillColor">#10B981</Color>
+  <!-- Tema oscuro (propuesta visual 2026-10-17): azul pizarra, no negro. Tarjetas un tono
+       más claras que el fondo y campos un tono más oscuros, para separar lo que se lee de lo
+       que se completa. Sin sombras: en oscuro las piezas se separan con bordes finos.
+       Mismas claves que el tema claro (ver LightTheme.axaml). -->
+  <Color x:Key="BgPrimaryColor">#0F171F</Color>
+  <Color x:Key="BgSecondaryColor">#131D26</Color>
+  <Color x:Key="BgCardColor">#17212B</Color>
+  <Color x:Key="BorderColor">#2A3744</Color>
+  <Color x:Key="TextPrimaryColor">#E6EBF0</Color>
+  <Color x:Key="TextSecondaryColor">#A9B4BF</Color>
+  <Color x:Key="AccentColor">#0E7C76</Color>
+  <Color x:Key="AccentHoverColor">#11908A</Color>
+  <Color x:Key="ErrorColor">#E5574B</Color>
+  <Color x:Key="WarningColor">#E3A23C</Color>
+  <Color x:Key="VioletColor">#7F7BEA</Color>
+  <Color x:Key="ProgressBgColor">#2A3744</Color>
+  <Color x:Key="ProgressFillColor">#2BA197</Color>
 
   <SolidColorBrush x:Key="BgPrimaryBrush" Color="{StaticResource BgPrimaryColor}"/>
   <SolidColorBrush x:Key="BgSecondaryBrush" Color="{StaticResource BgSecondaryColor}"/>
@@ -28,4 +31,45 @@
   <SolidColorBrush x:Key="VioletBrush" Color="{StaticResource VioletColor}"/>
   <SolidColorBrush x:Key="ProgressBgBrush" Color="{StaticResource ProgressBgColor}"/>
   <SolidColorBrush x:Key="ProgressFillBrush" Color="{StaticResource ProgressFillColor}"/>
+
+  <!-- Superficies -->
+  <SolidColorBrush x:Key="BgSubtleBrush" Color="#131D26"/>
+  <SolidColorBrush x:Key="BgInputBrush" Color="#0F171F"/>
+  <SolidColorBrush x:Key="BorderStrongBrush" Color="#3A4856"/>
+  <SolidColorBrush x:Key="DashedBorderBrush" Color="#4A5868"/>
+  <SolidColorBrush x:Key="DividerBrush" Color="#22303D"/>
+  <SolidColorBrush x:Key="TextTertiaryBrush" Color="#8E9AA6"/>
+  <SolidColorBrush x:Key="SegmentTrackBrush" Color="#0A1117"/>
+  <SolidColorBrush x:Key="SegmentOnBrush" Color="#2A3744"/>
+  <SolidColorBrush x:Key="NavHoverBrush" Color="#1A2530"/>
+
+  <!-- Acento -->
+  <SolidColorBrush x:Key="AccentTextBrush" Color="#6FD0C4"/>
+  <SolidColorBrush x:Key="AccentSoftBrush" Color="#143A39"/>
+  <SolidColorBrush x:Key="AccentCardBrush" Color="#12302F"/>
+  <SolidColorBrush x:Key="AccentPressedBrush" Color="#0B625D"/>
+  <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="OnAccentSoftBrush" Color="#DDF3F0"/>
+
+  <!-- Estados -->
+  <SolidColorBrush x:Key="SuccessBrush" Color="#2E9E5E"/>
+  <SolidColorBrush x:Key="SuccessSoftBrush" Color="#12301F"/>
+  <SolidColorBrush x:Key="SuccessTextBrush" Color="#6FD39B"/>
+  <SolidColorBrush x:Key="SuccessBorderBrush" Color="#1F5A37"/>
+  <SolidColorBrush x:Key="WarningSoftBrush" Color="#33240B"/>
+  <SolidColorBrush x:Key="WarningTextBrush" Color="#F2B85B"/>
+  <SolidColorBrush x:Key="WarningBorderBrush" Color="#6B4A12"/>
+  <SolidColorBrush x:Key="OnWarningBrush" Color="#1A1305"/>
+  <SolidColorBrush x:Key="ErrorSoftBrush" Color="#3A1414"/>
+  <SolidColorBrush x:Key="ErrorTextBrush" Color="#F49A90"/>
+  <SolidColorBrush x:Key="ErrorBorderBrush" Color="#7A2A24"/>
+  <SolidColorBrush x:Key="ReservedSoftBrush" Color="#25234A"/>
+  <SolidColorBrush x:Key="ReservedTextBrush" Color="#B9B6FA"/>
+
+  <!-- Bitácora -->
+  <SolidColorBrush x:Key="LogBgBrush" Color="#0A1117"/>
+  <SolidColorBrush x:Key="LogHeaderBrush" Color="#131D26"/>
+  <SolidColorBrush x:Key="LogTextBrush" Color="#C3CCD5"/>
+  <SolidColorBrush x:Key="LogTimeBrush" Color="#6B7886"/>
+  <SolidColorBrush x:Key="LogInfoBrush" Color="#7AB8F5"/>
 </ResourceDictionary>

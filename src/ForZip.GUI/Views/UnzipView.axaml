@@ -5,115 +5,227 @@
              x:DataType="vm:UnzipViewModel"
              DragDrop.AllowDrop="True">
 
-  <ScrollViewer>
-    <StackPanel Spacing="12" Margin="4">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="20" Margin="32,28,32,28" MaxWidth="900">
 
-      <TextBlock Text="{Binding Title}"
-                 FontSize="16" FontWeight="SemiBold"
-                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+      <StackPanel Spacing="4">
+        <TextBlock Classes="h1" Text="{Binding Heading}"/>
+        <TextBlock Classes="lead" Text="{Binding Subtitle}"/>
+      </StackPanel>
 
-      <Border BorderBrush="{DynamicResource BorderBrush}"
-              BorderThickness="1"
-              CornerRadius="4"
-              Padding="24"
-              MinHeight="100">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-          <TextBlock Text="{Binding LabelDropZone}"
-                     Foreground="{DynamicResource TextSecondaryBrush}"
-                     HorizontalAlignment="Center"/>
-          <TextBlock Text="o hacé clic para buscar"
-                     Foreground="{DynamicResource TextSecondaryBrush}"
-                     HorizontalAlignment="Center"/>
-          <Button Content="Seleccionar ZIP..."
-                  Click="OnBrowseZipClick"
-                  HorizontalAlignment="Center"
-                  Margin="0,8,0,0"/>
+      <!-- Veredicto de la verificación automática al abrir un sobre. -->
+      <Border Classes="callout" Background="{DynamicResource SuccessSoftBrush}"
+              BorderBrush="{DynamicResource SuccessBorderBrush}" IsVisible="{Binding ShowVerdictOk}">
+        <TextBlock Text="{Binding SealedVerdict}" TextWrapping="Wrap" FontWeight="SemiBold"
+                   Foreground="{DynamicResource SuccessTextBrush}"/>
+      </Border>
+      <Border Classes="callout warning" IsVisible="{Binding ShowVerdictBad}">
+        <TextBlock Text="{Binding SealedVerdict}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+      </Border>
+
+      <!-- Resultado de la extracción, con cada observación a la vista. -->
+      <Border Classes="card resultCard" IsVisible="{Binding HasResult}"
+              Classes.ok="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=ok}"
+              Classes.notes="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=notes}"
+              Classes.error="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=error}">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Grid.Column="0" Classes="resultBadge" Width="38" Height="38" CornerRadius="19"
+                    Margin="0,0,14,0" VerticalAlignment="Center">
+              <Panel>
+                <Viewbox Width="20" Height="20" IsVisible="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=ok}">
+                  <Path Classes="icon success bold" Data="{StaticResource IconCheck}"/>
+                </Viewbox>
+                <Viewbox Width="20" Height="20" IsVisible="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=notes}">
+                  <Path Classes="icon warning" StrokeThickness="2" Data="{StaticResource IconWarning}"/>
+                </Viewbox>
+                <Viewbox Width="20" Height="20" IsVisible="{Binding ResultKind, Converter={x:Static vm:EqualsConverter.Instance}, ConverterParameter=error}">
+                  <Path Classes="icon error bold" Data="{StaticResource IconCross}"/>
+                </Viewbox>
+              </Panel>
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+              <TextBlock Classes="h2" Text="{Binding ResultHeading}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ResultDetail}" FontSize="14" TextWrapping="Wrap"
+                         Foreground="{DynamicResource TextSecondaryBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="2" Command="{Binding OpenOutputFolderCommand}" VerticalAlignment="Center"
+                    Margin="12,0,0,0">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Viewbox Width="18" Height="18"><Path Classes="icon" Data="{StaticResource IconFolder}"/></Viewbox>
+                <TextBlock Text="{Binding LabelOpenFolder}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </Grid>
+
+          <ItemsControl ItemsSource="{Binding Observations}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Spacing="8"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ExtractionObservation">
+                <Border Classes="subtle" Padding="14,12">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Classes.obsError="{Binding IsError}" Classes="obsTitle"/>
+                    <TextBlock Text="{Binding Detail}" Classes="mono" FontSize="13" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <TextBlock Text="{Binding Advice}" Classes="hint" IsVisible="{Binding HasAdvice}"/>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
       </Border>
 
-      <StackPanel Spacing="4">
-        <TextBlock Text="{Binding LabelZipPath}"
-                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBox Grid.Column="0" 
-                   Text="{Binding ZipFilePath}" 
-                   Height="32"
-                   VerticalContentAlignment="Center"/>
-          <Button Grid.Column="1"
-                  Content="..."
-                  Click="OnBrowseZipClick"
-                  Width="40" Height="32"
-                  Padding="0"
-                  HorizontalContentAlignment="Center"
-                  VerticalContentAlignment="Center"
-                  Margin="6,0,0,0"/>
-        </Grid>
-      </StackPanel>
+      <Border Classes="card">
+        <StackPanel Spacing="18">
 
-      <StackPanel Spacing="4">
-        <TextBlock Text="{Binding LabelOutputDir}"
-                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-        <Grid ColumnDefinitions="*,Auto">
-          <TextBox Grid.Column="0" 
-                   Text="{Binding OutputDirectory}" 
-                   Height="32"
-                   VerticalContentAlignment="Center"/>
-          <Button Grid.Column="1"
-                  Content="..."
-                  Click="OnBrowseOutputClick"
-                  Width="40" Height="32"
-                  Padding="0"
-                  HorizontalContentAlignment="Center"
-                  VerticalContentAlignment="Center"
-                  Margin="6,0,0,0"/>
-        </Grid>
-      </StackPanel>
+          <!-- Zona para soltar el paquete -->
+          <Panel>
+            <Rectangle Stroke="{DynamicResource DashedBorderBrush}" StrokeThickness="1.5"
+                       StrokeDashArray="4,3" RadiusX="12" RadiusY="12"/>
+            <Border Background="{DynamicResource BgSubtleBrush}" CornerRadius="12" Margin="1.5" Padding="16,18">
+              <StackPanel HorizontalAlignment="Center" Spacing="10">
+                <Viewbox Width="28" Height="28" HorizontalAlignment="Center"><Path Classes="icon" Data="{StaticResource IconDrop}"/></Viewbox>
+                <!-- La cadena localizada ya trae las dos líneas. -->
+                <TextBlock Text="{Binding LabelDropZone}" FontSize="14"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                <Button Content="{Binding ButtonBrowse}" Click="OnBrowseZipClick" HorizontalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+          </Panel>
 
-      <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="4" Margin="0,0,0,4">
-          <TextBlock Text="{Binding LabelPassword}"
-                     Foreground="{DynamicResource TextSecondaryBrush}"/>
-          <TextBlock Text="(AES-256)"
-                     Foreground="{DynamicResource AccentBrush}"
-                     FontSize="10"
-                     VerticalAlignment="Center"/>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{Binding LabelZipPath}"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Classes="mono" Text="{Binding ZipFilePath}"/>
+              <Button Grid.Column="1" Classes="icon" Click="OnBrowseZipClick" Margin="8,0,0,0"
+                      ToolTip.Tip="{Binding ButtonBrowse}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconFile}"/></Viewbox>
+              </Button>
+            </Grid>
+          </StackPanel>
+
+          <!-- Sobre .fzs: lo que se sabe sin contraseña, y dónde va a quedar el contenido. -->
+          <Border Classes="subtle" IsVisible="{Binding IsSealedInput}">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Grid.Column="0" Classes="iconTile" Width="40" Height="40" CornerRadius="10"
+                      VerticalAlignment="Top" Margin="0,0,14,0">
+                <Viewbox Width="22" Height="22"><Path Classes="icon accent" Data="{StaticResource IconEnvelope}"/></Viewbox>
+              </Border>
+              <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                <TextBlock Text="{Binding SealedSummary}" TextWrapping="Wrap" FontSize="14"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <TextBlock Classes="hint" Text="{Binding SealedDestinationHint}"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <!-- Sin "(AES-256)": al extraer, el cifrado lo decide el archivo (AES-128 en RAR 3.x, ZipCrypto…). -->
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{Binding LabelPassword}"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBox Classes="mono" FontSize="15" Width="340"
+                       Text="{Binding Password}"
+                       PasswordChar="{Binding PasswordCharDisplay}"
+                       KeyDown="OnPasswordKeyDown"/>
+              <ToggleButton Classes="icon" IsChecked="{Binding IsPasswordVisible}"
+                            ToolTip.Tip="{Binding TooltipTogglePassword}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconEye}"/></Viewbox>
+              </ToggleButton>
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{Binding LabelOutputDir}"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Classes="mono" Text="{Binding OutputDirectory}"/>
+              <Button Grid.Column="1" Classes="icon" Click="OnBrowseOutputClick" Margin="8,0,0,0"
+                      ToolTip.Tip="{Binding LabelOutputDir}">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" Data="{StaticResource IconFolder}"/></Viewbox>
+              </Button>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding !IsSealedInput}">
+              <Viewbox Grid.Column="0" Width="16" Height="16" Margin="0,1,8,0" VerticalAlignment="Top">
+                <Path Classes="icon" Data="{StaticResource IconAbout}"/>
+              </Viewbox>
+              <TextBlock Grid.Column="1" Classes="hint" Text="{Binding LabelDestinationHint}"/>
+            </Grid>
+          </StackPanel>
+
+          <ProgressBar Minimum="0" Maximum="100"
+                       Value="{Binding ProgressPercent}"
+                       Height="8" CornerRadius="4"
+                       IsVisible="{Binding IsProcessing}"
+                       Foreground="{DynamicResource ProgressFillBrush}"
+                       Background="{DynamicResource ProgressBgBrush}"/>
+          <TextBlock Text="{Binding ProgressFile}" Classes="mono" FontSize="13"
+                     Foreground="{DynamicResource TextPrimaryBrush}" TextTrimming="PrefixCharacterEllipsis"
+                     ToolTip.Tip="{Binding ProgressFile}">
+            <TextBlock.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="IsProcessing"/>
+                <Binding Path="ProgressFile" Converter="{x:Static StringConverters.IsNotNullOrEmpty}"/>
+              </MultiBinding>
+            </TextBlock.IsVisible>
+          </TextBlock>
+          <TextBlock Classes="hint" Text="{Binding ProgressDetail}" IsVisible="{Binding IsProcessing}"/>
+
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="14"
+                       Classes="status" Classes.statusError="{Binding IsStatusError}" VerticalAlignment="Center"
+                       Margin="0,0,16,0"/>
+            <Button Grid.Column="1" Content="{Binding ButtonCancel}" Command="{Binding DecompressCancelCommand}"
+                    IsVisible="{Binding IsProcessing}" MinHeight="46" Padding="20,10" Margin="0,0,10,0"/>
+            <Button Grid.Column="2" Classes="primary" Command="{Binding DecompressCommand}"
+                    IsEnabled="{Binding !IsProcessing}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="20" Height="20"><Path Classes="icon" StrokeThickness="1.9" Data="{StaticResource IconExtract}"/></Viewbox>
+                <TextBlock Text="{Binding ButtonExtract}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </Grid>
         </StackPanel>
-        <TextBox Text="{Binding Password}"
-                 PasswordChar="•"
-                 Width="280"
-                 HorizontalAlignment="Left"/>
-      </DockPanel>
-
-      <ProgressBar Minimum="0" Maximum="100"
-                   Value="{Binding ProgressPercent}"
-                   Height="8"
-                   IsVisible="{Binding IsProcessing}"
-                   Foreground="{DynamicResource ProgressFillBrush}"
-                   Background="{DynamicResource ProgressBgBrush}"/>
-
-      <TextBlock Text="{Binding ProgressDetail}"
-                 Foreground="{DynamicResource TextSecondaryBrush}"
-                 FontSize="11"
-                 IsVisible="{Binding IsProcessing}"/>
-
-      <TextBlock Text="{Binding StatusMessage}"
-                 Foreground="{DynamicResource TextSecondaryBrush}"/>
-
-      <StackPanel Orientation="Horizontal"
-                  Spacing="8"
-                  HorizontalAlignment="Center">
-        <Button Content="{Binding ButtonExtract}"
-                Command="{Binding DecompressCommand}"
-                Background="{DynamicResource AccentBrush}"
-                Foreground="White"
-                Padding="20,8"
-                IsEnabled="{Binding !IsProcessing}"/>
-        <Button Content="{Binding ButtonCancel}"
-                Command="{Binding DecompressCancelCommand}"
-                IsVisible="{Binding IsProcessing}"
-                Padding="20,8"/>
-      </StackPanel>
+      </Border>
 
     </StackPanel>
   </ScrollViewer>
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.status">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.status.statusError">
+      <Setter Property="Foreground" Value="{DynamicResource ErrorTextBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="Border.resultCard.ok">
+      <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.resultCard.ok Border.resultBadge">
+      <Setter Property="Background" Value="{DynamicResource SuccessSoftBrush}"/>
+    </Style>
+    <Style Selector="Border.resultCard.notes">
+      <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.resultCard.notes Border.resultBadge">
+      <Setter Property="Background" Value="{DynamicResource WarningSoftBrush}"/>
+    </Style>
+    <Style Selector="Border.resultCard.error">
+      <Setter Property="BorderBrush" Value="{DynamicResource ErrorBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.resultCard.error Border.resultBadge">
+      <Setter Property="Background" Value="{DynamicResource ErrorSoftBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.obsTitle">
+      <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.obsTitle.obsError">
+      <Setter Property="Foreground" Value="{DynamicResource ErrorTextBrush}"/>
+    </Style>
+  </UserControl.Styles>
 </UserControl>

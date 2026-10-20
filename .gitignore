@@ -8,7 +8,3 @@ Publish/
 Logs/
 config.json
 *.DotSettings.user
-.claude/
-
-# Documentos de trabajo internos: nunca se suben
-Documentation/SESSION_HANDOFF.md

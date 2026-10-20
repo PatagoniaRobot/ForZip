@@ -35,6 +35,10 @@ namespace ForZip.Core.Services;
 /// <para/>
 /// El flujo lógico (la concatenación de todos los volúmenes) es un ZIP estándar válido:
 /// este stream no interpreta el contenido, solo corta por offset de byte.
+/// <para/>
+/// Con <c>rewritableFirstVolume</c> el stream admite volver atrás para reescribir bytes del primer
+/// volumen, que queda abierto hasta el final: un 7z escribe su firma en los primeros 32 bytes recién al
+/// cerrar. El SHA-256 de ese volumen se recalcula entonces leyéndolo una vez (a lo sumo un volumen).
 /// </summary>
 public sealed class SplittingWriteStream : Stream
 {
@@ -51,7 +55,20 @@ public sealed class SplittingWriteStream : Stream
     private int _volumeIndex; // 0 = ninguno abierto todavía
     private bool _finalized;
 
+    // Modo de primer volumen reescribible (ver la descripción de la clase).
+    private readonly bool _rewritableFirst;
+    private FileStream? _first;      // el primer volumen, ya completo, todavía abierto
+    private long _firstLength;
+    private bool _firstDirty;        // se reescribió: su hash incremental ya no vale
+    private long _length;            // bytes lógicos escritos
+    private long _position;          // posición lógica (menor que _length solo al reescribir)
+
     public SplittingWriteStream(string basePath, long splitSize)
+        : this(basePath, splitSize, rewritableFirstVolume: false)
+    {
+    }
+
+    public SplittingWriteStream(string basePath, long splitSize, bool rewritableFirstVolume)
     {
         if (string.IsNullOrWhiteSpace(basePath))
         {
@@ -64,6 +81,7 @@ public sealed class SplittingWriteStream : Stream
 
         _basePath = basePath;
         _splitSize = splitSize;
+        _rewritableFirst = rewritableFirstVolume;
     }
 
     /// <summary>Volúmenes generados (con nombre, tamaño y SHA-256). Válido tras cerrar el stream.</summary>
@@ -73,13 +91,13 @@ public sealed class SplittingWriteStream : Stream
     public IReadOnlyList<string> CreatedFiles => _createdFiles;
 
     public override bool CanRead => false;
-    public override bool CanSeek => false;
+    public override bool CanSeek => _rewritableFirst;
     public override bool CanWrite => true;
-    public override long Length => throw new NotSupportedException();
+    public override long Length => _rewritableFirst ? _length : throw new NotSupportedException();
     public override long Position
     {
-        get => throw new NotSupportedException();
-        set => throw new NotSupportedException();
+        get => _rewritableFirst ? _position : throw new NotSupportedException();
+        set => Seek(value, SeekOrigin.Begin);
     }
 
     public override void Write(byte[] buffer, int offset, int count)
@@ -92,6 +110,13 @@ public sealed class SplittingWriteStream : Stream
 
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
+        if (_rewritableFirst)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            WriteCore(buffer.Span);
+            return;
+        }
+
         var remaining = buffer;
         while (!remaining.IsEmpty)
         {
@@ -116,6 +141,18 @@ public sealed class SplittingWriteStream : Stream
 
     private void WriteCore(ReadOnlySpan<byte> buffer)
     {
+        if (_rewritableFirst)
+        {
+            if (_position < _length)
+            {
+                OverwriteFirstVolume(buffer);
+                return;
+            }
+
+            _position += buffer.Length;
+            _length += buffer.Length;
+        }
+
         while (!buffer.IsEmpty)
         {
             EnsureCurrentOpen();
@@ -145,7 +182,8 @@ public sealed class SplittingWriteStream : Stream
 
         _volumeIndex++;
         var path = SplitArchive.GetVolumePath(_basePath, _volumeIndex);
-        _current = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, FileBufferSize);
+        var access = _rewritableFirst && _volumeIndex == 1 ? FileAccess.ReadWrite : FileAccess.Write;
+        _current = new FileStream(path, FileMode.Create, access, FileShare.None, FileBufferSize);
         _createdFiles.Add(path);
         _hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         _currentLength = 0;
@@ -160,7 +198,16 @@ public sealed class SplittingWriteStream : Stream
 
         var path = _current.Name;
         _current.Flush();
-        _current.Dispose();
+        if (_rewritableFirst && _volumeIndex == 1)
+        {
+            // Queda abierto para poder reescribir su comienzo; se cierra en Finish.
+            _first = _current;
+            _firstLength = _currentLength;
+        }
+        else
+        {
+            _current.Dispose();
+        }
 
         var digest = Convert.ToHexString(_hash!.GetHashAndReset()).ToLowerInvariant();
         _hash.Dispose();
@@ -188,6 +235,62 @@ public sealed class SplittingWriteStream : Stream
         }
         CloseCurrentVolume();
         _finalized = true;
+
+        if (_first != null)
+        {
+            using (_first)
+            {
+                if (_firstDirty)
+                {
+                    _first.Position = 0;
+                    var digest = Convert.ToHexString(SHA256.HashData(_first)).ToLowerInvariant();
+                    _volumes[0] = new VolumeInfo { FileName = _volumes[0].FileName, Size = _firstLength, Sha256 = digest };
+                }
+            }
+
+            _first = null;
+        }
+    }
+
+    /// <summary>Reescribe bytes ya escritos; solo se admite dentro del primer volumen.</summary>
+    private void OverwriteFirstVolume(ReadOnlySpan<byte> buffer)
+    {
+        // El primer volumen puede ser todavía el volumen en curso.
+        var stream = _first ?? (_volumeIndex == 1 ? _current : null);
+        long firstLength = _first != null ? _firstLength : _currentLength;
+        if (stream == null || _position + buffer.Length > firstLength)
+        {
+            throw new NotSupportedException("Solo se pueden reescribir bytes del primer volumen.");
+        }
+
+        long end = stream.Position;
+        stream.Position = _position;
+        stream.Write(buffer);
+        stream.Position = end;
+        _position += buffer.Length;
+        _firstDirty = true;
+    }
+
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        if (!_rewritableFirst)
+        {
+            throw new NotSupportedException();
+        }
+
+        long target = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => _position + offset,
+            _ => _length + offset
+        };
+        if (target < 0 || target > _length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset), "Fuera de lo ya escrito.");
+        }
+
+        _position = target;
+        return _position;
     }
 
     protected override void Dispose(bool disposing)
@@ -201,6 +304,5 @@ public sealed class SplittingWriteStream : Stream
 
     // Operaciones no soportadas en un stream de solo escritura segmentado.
     public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
     public override void SetLength(long value) => throw new NotSupportedException();
 }
